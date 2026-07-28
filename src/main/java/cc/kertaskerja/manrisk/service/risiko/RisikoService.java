@@ -68,7 +68,7 @@ public class RisikoService {
         existing.setKeterangan(reqDTO.getKeterangan());
         existing.setRealisasiTindakPengendalian(reqDTO.getRealisasiTindakPengendalian());
         existing.setDapatTerkendali(reqDTO.getDapatTerkendali());
-        existing.setDampat(reqDTO.getDampat());
+        existing.setDampak(reqDTO.getDampak());
         existing.setCatatan(reqDTO.getCatatan());
 
         Risiko saved = risikoRepository.save(existing);
@@ -100,7 +100,7 @@ public class RisikoService {
               .keterangan(risiko.getKeterangan())
               .realisasiTindakPengendalian(risiko.getRealisasiTindakPengendalian())
               .dapatTerkendali(risiko.getDapatTerkendali())
-              .dampak(risiko.getDampat())
+              .dampak(risiko.getDampak())
               .catatan(risiko.getCatatan())
               .createdAt(risiko.getCreatedAt())
               .updatedAt(risiko.getUpdatedAt())
@@ -123,7 +123,7 @@ public class RisikoService {
               .keterangan(reqDTO.getKeterangan())
               .realisasiTindakPengendalian(reqDTO.getRealisasiTindakPengendalian())
               .dapatTerkendali(reqDTO.getDapatTerkendali())
-              .dampak(reqDTO.getDampat())
+              .dampak(reqDTO.getDampak())
               .catatan(reqDTO.getCatatan())
               .build();
     }

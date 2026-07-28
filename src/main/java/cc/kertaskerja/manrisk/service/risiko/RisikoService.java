@@ -25,6 +25,13 @@ public class RisikoService {
               .collect(Collectors.toList());
     }
 
+    public List<RisikoResDTO> getRisikoByKodeSasaranOpd(String kodeSasaranOpd) {
+        return risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd)
+              .stream()
+              .map(this::toResDTO)
+              .collect(Collectors.toList());
+    }
+
     public RisikoResDTO getRisikoById(Long id) {
         Risiko risiko = risikoRepository.findById(id)
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
@@ -93,7 +100,7 @@ public class RisikoService {
               .keterangan(risiko.getKeterangan())
               .realisasiTindakPengendalian(risiko.getRealisasiTindakPengendalian())
               .dapatTerkendali(risiko.getDapatTerkendali())
-              .dampat(risiko.getDampat())
+              .dampak(risiko.getDampat())
               .catatan(risiko.getCatatan())
               .createdAt(risiko.getCreatedAt())
               .updatedAt(risiko.getUpdatedAt())
@@ -116,7 +123,7 @@ public class RisikoService {
               .keterangan(reqDTO.getKeterangan())
               .realisasiTindakPengendalian(reqDTO.getRealisasiTindakPengendalian())
               .dapatTerkendali(reqDTO.getDapatTerkendali())
-              .dampat(reqDTO.getDampat())
+              .dampak(reqDTO.getDampat())
               .catatan(reqDTO.getCatatan())
               .build();
     }

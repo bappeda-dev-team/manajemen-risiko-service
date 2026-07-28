@@ -59,8 +59,8 @@ public class RisikoResDTO {
     @JsonProperty("dapat_terkendali")
     private String dapatTerkendali;
 
-    @JsonProperty("dampat")
-    private String dampat;
+    @JsonProperty("dampak")
+    private String dampak;
 
     @JsonProperty("catatan")
     private String catatan;

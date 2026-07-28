@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS risiko
     keterangan VARCHAR(255),
     realisasi_tindak_pengendalian VARCHAR(255),
     dapat_terkendali VARCHAR(255),
-    dampat VARCHAR(255),
+    dampak VARCHAR(255),
     catatan VARCHAR(255),
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP

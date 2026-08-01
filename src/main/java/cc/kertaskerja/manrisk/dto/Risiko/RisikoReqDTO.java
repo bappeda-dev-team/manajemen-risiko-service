@@ -15,14 +15,17 @@ public class RisikoReqDTO {
     @JsonProperty("kode_opd")
     private String kodeOpd;
 
-    @JsonProperty("kode_risiko")
-    private String kodeRisiko;
-
     @JsonProperty("tahun")
     private Integer tahun;
 
     @JsonProperty("kode_sasaran_opd")
     private String kodeSasaranOpd;
+
+    @JsonProperty("permasalahan")
+    private String permasalahan;
+
+    @JsonProperty("sebab_permasalahan")
+    private String sebabPermasalahan;
 
     @JsonProperty("pernyataan_risiko")
     private String pernyataanRisiko;

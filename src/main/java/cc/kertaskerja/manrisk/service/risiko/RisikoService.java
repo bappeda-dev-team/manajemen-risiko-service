@@ -3,7 +3,6 @@ package cc.kertaskerja.manrisk.service.risiko;
 import cc.kertaskerja.manrisk.dto.Risiko.RisikoReqDTO;
 import cc.kertaskerja.manrisk.dto.Risiko.RisikoResDTO;
 import cc.kertaskerja.manrisk.entity.Risiko;
-import cc.kertaskerja.manrisk.exception.BadRequestException;
 import cc.kertaskerja.manrisk.exception.ResourceNotFoundException;
 import cc.kertaskerja.manrisk.repository.RisikoRepository;
 import lombok.RequiredArgsConstructor;
@@ -40,11 +39,9 @@ public class RisikoService {
     }
 
     public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
-        risikoRepository.findByKodeRisiko(reqDTO.getKodeRisiko()).ifPresent(r -> {
-            throw new BadRequestException("Risiko with kode_risiko '" + reqDTO.getKodeRisiko() + "' already exists");
-        });
-
         Risiko risiko = toEntity(reqDTO);
+        risiko.setKodeRisiko(generateKodeRisiko());
+
         Risiko saved = risikoRepository.save(risiko);
 
         return toResDTO(saved);
@@ -55,9 +52,10 @@ public class RisikoService {
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
 
         existing.setKodeOpd(reqDTO.getKodeOpd());
-        existing.setKodeRisiko(reqDTO.getKodeRisiko());
         existing.setTahun(reqDTO.getTahun());
         existing.setKodeSasaranOpd(reqDTO.getKodeSasaranOpd());
+        existing.setPermasalahan(reqDTO.getPermasalahan());
+        existing.setSebabPermasalahan(reqDTO.getSebabPermasalahan());
         existing.setPernyataanRisiko(reqDTO.getPernyataanRisiko());
         existing.setSkalaKemungkinan(reqDTO.getSkalaKemungkinan());
         existing.setSkalaDampak(reqDTO.getSkalaDampak());
@@ -83,6 +81,11 @@ public class RisikoService {
         risikoRepository.delete(existing);
     }
 
+    private String generateKodeRisiko() {
+        long next = risikoRepository.count() + 1;
+        return String.format("RSK-%04d", next);
+    }
+
     private RisikoResDTO toResDTO(Risiko risiko) {
         return RisikoResDTO.builder()
               .id(risiko.getId())
@@ -90,6 +93,8 @@ public class RisikoService {
               .kodeRisiko(risiko.getKodeRisiko())
               .tahun(risiko.getTahun())
               .kodeSasaranOpd(risiko.getKodeSasaranOpd())
+              .permasalahan(risiko.getPermasalahan())
+              .sebabPermasalahan(risiko.getSebabPermasalahan())
               .pernyataanRisiko(risiko.getPernyataanRisiko())
               .skalaKemungkinan(risiko.getSkalaKemungkinan())
               .skalaDampak(risiko.getSkalaDampak())
@@ -110,9 +115,10 @@ public class RisikoService {
     private Risiko toEntity(RisikoReqDTO reqDTO) {
         return Risiko.builder()
               .kodeOpd(reqDTO.getKodeOpd())
-              .kodeRisiko(reqDTO.getKodeRisiko())
               .tahun(reqDTO.getTahun())
               .kodeSasaranOpd(reqDTO.getKodeSasaranOpd())
+              .permasalahan(reqDTO.getPermasalahan())
+              .sebabPermasalahan(reqDTO.getSebabPermasalahan())
               .pernyataanRisiko(reqDTO.getPernyataanRisiko())
               .skalaKemungkinan(reqDTO.getSkalaKemungkinan())
               .skalaDampak(reqDTO.getSkalaDampak())

@@ -32,6 +32,12 @@ public class Risiko extends BaseAuditable {
     @Column(name = "kode_sasaran_opd")
     private String kodeSasaranOpd;
 
+    @Column(name = "permasalahan")
+    private String permasalahan;
+
+    @Column(name = "sebab_permasalahan")
+    private String sebabPermasalahan;
+
     @Column(name = "pernyataan_risiko")
     private String pernyataanRisiko;
 

@@ -2,10 +2,13 @@ spring:
   application:
     name: manrisk
 
+  config:
+    import: optional:file:.env[.properties]
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/manajemen_risiko
-    username: majapahit
-    password: Madiun@123
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/manajemen_risiko}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     hikari:
       connection-timeout: 2000
       maximum-pool-size: 5
@@ -38,7 +41,7 @@ spring:
       resolve-lazily: false
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
     context-path: /manrisk/api
   tomcat:
@@ -83,4 +86,3 @@ springdoc:
     tryItOutEnabled: true
   override-with-generic-response: false
   show-actuator: false
-

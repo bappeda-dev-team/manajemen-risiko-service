@@ -29,6 +29,12 @@ public class RisikoResDTO {
     @JsonProperty("kode_sasaran_opd")
     private String kodeSasaranOpd;
 
+    @JsonProperty("permasalahan")
+    private String permasalahan;
+
+    @JsonProperty("sebab_permasalahan")
+    private String sebabPermasalahan;
+
     @JsonProperty("pernyataan_risiko")
     private String pernyataanRisiko;
 

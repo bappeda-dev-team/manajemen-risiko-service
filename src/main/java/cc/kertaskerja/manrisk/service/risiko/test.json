@@ -1,3 +1,310 @@
-curl --location 'https://testapi.kertaskerja.cc/api/v1/penetapan/opd/tujuan-with-sasaran?kodeOpd=8.01.0.00.0.00.01.0000&tahun=2026' \
---header 'X-Session-Id: 8403934d-8e6a-41ea-aaa4-ccb10285be78' \
---header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImFrdW5fdGVzdF9sZXZlbF8zQGdtYWlsLmNvbSIsImV4cCI6MTc4MTU4NjQ4MiwiaWF0IjoxNzgxNTAwMDgyLCJpc3MiOiIiLCJrb2RlX29wZCI6IjUuMDEuNS4wNS4wLjAwLjAxLjAwMDAiLCJuYW1hX29wZCI6IkJhZGFuIFBlcmVuY2FuYWFuIFBlbWJhbmd1bmFuIFJpc2V0LCBkYW4gSW5vdmFzaSBEYWVyYWgiLCJuYW1hX3BlZ2F3YWkiOiJha3VuIHRlc3QgbGV2ZWwgMyIsIm5pcCI6ImFrdW5fdGVzdF9sZXZlbF8zIiwicGVnYXdhaV9pZCI6IlBFRy0yMDI1MDExNS01MjY5YmIxNCIsInJvbGVzIjpbImxldmVsXzMiXSwidXNlcl9pZCI6NTU2fQ._JcAL2rRSPB_panRGRmL2ejrYQk7p9X-XIxqRKmjIis'
+{
+  "status": 200,
+  "message": "",
+  "data": [
+    {
+      "kode_opd": "1.03.0.00.0.00.01.0000",
+      "kode_sasaran_opd": "SAS-OPD-34035",
+      "kode_risiko": "RSK-0002",
+      "tahun": 2026,
+      "sasaran_opd": "Meningkatnya Ketertiban Organisasi Masyarakat",
+      "periode": "2025-2030",
+      "indikators": [
+        {
+          "id": 6,
+          "kode_indikator": "IND-IND-SAR-d5746",
+          "indikator": "Indikator Meningkatnya Ketertiban Organisasi Masyarakat",
+          "rumus_perhitungan": "(realisasi/target)*100",
+          "sumber_data": "BPS",
+          "definisi_operasional": "Meningkatnya Ketertiban Organisasi Masyarakat",
+          "tahun_aktif": 2026,
+          "targets": [
+            {
+              "id": 6,
+              "kode_target": "TGT-TRG-SAR-fe4ec",
+              "tahun": 2026,
+              "target": 100,
+              "satuan": "%"
+            }
+          ]
+        }
+      ],
+      "risiko": [
+        {
+          "permasalahan": "Kondisi cuaca ekstrem yang menghambat pekerjaan konstruksi perbaikan jalan daerah.",
+          "sebab_permasalahan": "Tingginya curah hujan di pertengahan tahun yang melebihi perkiraan saat perencanaan proyek.",
+          "pernyataan_risiko": "Keterlambatan penyelesaian proyek fisik infrastruktur yang berakibat pada denda keterlambatan dan terganggunya aksesibilitas masyarakat.",
+          "skala_kemungkinan": 3,
+          "skala_dampak": 4,
+          "pihak_terkena_risiko": "Penyedia Jasa (Kontraktor), Dinas Pekerjaan Umum, dan Masyarakat Pengguna Jalan",
+          "rencana_tindak_pengendalian": "Melakukan optimalisasi jam kerja (lembur) saat cuaca cerah dan menyusun adendum waktu kontrak jika memenuhi syarat keadaan kahar (force majeure).",
+          "metode_pemantauan": "Peninjauan lapangan mingguan dan evaluasi laporan progres fisik dari konsultan pengawas.",
+          "penanggungjawab_pemantauan": "Pejabat Pembuat Komitmen (PPK) Bidang Bina Marga",
+          "keterangan": "Fokus pengawasan pada 3 ruas jalan kabupaten dengan tingkat urgensi tinggi.",
+          "realisasi_tindak_pengendalian": "Telah diterbitkan instruksi penambahan shift kerja kepada pihak kontraktor pelaksana pada minggu pertama Agustus.",
+          "dapat_terkendali": "Ya",
+          "dampak": "Tidak tercapainya target persentase kemantapan jalan daerah pada tahun anggaran berjalan.",
+          "catatan": "Perlu koordinasi lebih intensif dengan BMKG untuk mitigasi risiko cuaca pada perencanaan proyek tahun depan.",
+          "created_at": "2026-08-01T22:34:08.443291",
+          "updated_at": "2026-08-01T22:34:08.443291"
+        },
+        {
+          "permasalahan": "Kurangnya partisipasi masyarakat dalam program kesehatan preventif di tingkat kecamatan.",
+          "sebab_permasalahan": "Minimnya sosialisasi dan edukasi kesehatan yang menjangkau masyarakat di wilayah pelosok.",
+          "pernyataan_risiko": "Target cakupan layanan kesehatan daerah tidak tercapai yang berpotensi menurunkan kualitas kesehatan masyarakat.",
+          "skala_kemungkinan": 4,
+          "skala_dampak": 5,
+          "pihak_terkena_risiko": "Masyarakat umum dan Dinas Kesehatan",
+          "rencana_tindak_pengendalian": "Melakukan program jemput bola ke desa-desa dan bekerja sama dengan tokoh masyarakat serta kader posyandu setempat.",
+          "metode_pemantauan": "Laporan evaluasi bulanan terkait jumlah kunjungan dan capaian layanan dari tiap Puskesmas.",
+          "penanggungjawab_pemantauan": "Kepala Bidang Pelayanan Kesehatan",
+          "keterangan": "Fokus penanganan difokuskan pada 5 kecamatan dengan capaian terendah.",
+          "realisasi_tindak_pengendalian": "Telah dilaksanakan sosialisasi dan pelayanan keliling di 2 kecamatan pada bulan Februari.",
+          "dapat_terkendali": "Ya",
+          "dampak": "Meningkatnya risiko penyebaran penyakit menular dan tidak tercapainya Indikator Kinerja Utama (IKU) Dinas.",
+          "catatan": "Perlu tambahan alokasi dana operasional untuk mobilitas tim lapangan.",
+          "created_at": "2026-08-01T05:04:05.195475",
+          "updated_at": "2026-08-01T05:04:05.195475"
+        }
+      ]
+    }
+  ]
+},
+
+{
+  "status": 200,
+  "message": "",
+  "data": [
+    {
+      "kode_opd": "1.03.0.00.0.00.01.0000",
+      "kode_sasaran_opd": "SAS-OPD-34035",
+      "kode_risiko": "RSK-0002",
+      "tahun": 2026,
+      "sasaran_opd": "Meningkatnya Ketertiban Organisasi Masyarakat",
+      "periode": "2025-2030",
+      "indikators": [
+        {
+          "id": 6,
+          "kode_indikator": "IND-IND-SAR-d5746",
+          "indikator": "Indikator Meningkatnya Ketertiban Organisasi Masyarakat",
+          "rumus_perhitungan": "(realisasi/target)*100",
+          "sumber_data": "BPS",
+          "definisi_operasional": "Meningkatnya Ketertiban Organisasi Masyarakat",
+          "tahun_aktif": 2026,
+          "targets": [
+            {
+              "id": 6,
+              "kode_target": "TGT-TRG-SAR-fe4ec",
+              "tahun": 2026,
+              "target": 100,
+              "satuan": "%"
+            }
+          ]
+        }
+      ],
+      "risiko": [
+        {
+                "type": "identifikasi",
+          "permasalahan": "Kondisi cuaca ekstrem yang menghambat pekerjaan konstruksi perbaikan jalan daerah.",
+          "sebab_permasalahan": "Tingginya curah hujan di pertengahan tahun yang melebihi perkiraan saat perencanaan proyek.",
+          "pernyataan_risiko": "Keterlambatan penyelesaian proyek fisik infrastruktur yang berakibat pada denda keterlambatan dan terganggunya aksesibilitas masyarakat.",
+        },
+        {
+        "type": "identifikasi",
+          "permasalahan": "Kurangnya partisipasi masyarakat dalam program kesehatan preventif di tingkat kecamatan.",
+          "sebab_permasalahan": "Minimnya sosialisasi dan edukasi kesehatan yang menjangkau masyarakat di wilayah pelosok.",
+          "pernyataan_risiko": "Target cakupan layanan kesehatan daerah tidak tercapai yang berpotensi menurunkan kualitas kesehatan masyarakat.",
+        }
+      ]
+    }
+  ]
+}
+
+
+getTujuanSasaran has response
+
+{
+  "data": {
+    "kode_opd": "8.01.0.00.0.00.01.0000",
+    "tahun_aktif": 2026,
+    "versi": 6,
+    "is_locked": true,
+    "tujuan_opds": [
+      {
+        "id": 39,
+        "kode_tujuan_opd": "TUJ-OPD-17",
+        "tujuan_opd": "Mewujudkan Sistem dan Budaya Politik yang Demokratis  disertai peningkatan  Wawasan Kebangsaan,Pendidikan Politik Masyarakat  dan Kewaspadaan Dini Daerah",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 40,
+        "kode_tujuan_opd": "TUJ-OPD-34",
+        "tujuan_opd": "Peningkatan Pemahakam Masyarakat Terhadap Kerukunan Beragama, Kehidupan Sosial dan Budaya",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 41,
+        "kode_tujuan_opd": "TUJ-OPD-35",
+        "tujuan_opd": "",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 42,
+        "kode_tujuan_opd": "TUJ-OPD-36",
+        "tujuan_opd": "Peningkatan Partisipasi Masyarakat dalam Pelaksanaan NIlai-Nilai Pancasila persatuan dan Kesatuan",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 43,
+        "kode_tujuan_opd": "TUJ-OPD-43",
+        "tujuan_opd": "Meningkatkan Pemerintah yang Bersih, Profesional dan berorientasi Pelayanan Publik",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 44,
+        "kode_tujuan_opd": "TUJ-OPD-66",
+        "tujuan_opd": "Mewujudkan Kehidupan Masyarakat yang harmonis dan demokratis",
+        "periode": "2025-2029",
+        "indikators": null,
+        "sasaran_opds": null
+      },
+      {
+        "id": 45,
+        "kode_tujuan_opd": "TUJ-OPD-181",
+        "tujuan_opd": "Terwujudnya Stabilitas Politik dan Kehidupan masyarakat yang harmoni",
+        "periode": "2025-2030",
+        "indikators": [
+          {
+            "id": 26,
+            "kode_indikator": "IND-1935",
+            "indikator": "Indeks Harmoni Indonesia ",
+            "rumus_perhitungan": "IHI= (W1 X DT) + (W2 x Dk) + (W3 x Ds)",
+            "sumber_data": "hasil Survei lapangan",
+            "definisi_operasional": "",
+            "tahun_aktif": 2026,
+            "targets": [
+              {
+                "id": 26,
+                "kode_target": "TGT-TRG-TJN-ca458",
+                "tahun": 2026,
+                "target": 60,
+                "satuan": "skor"
+              }
+            ]
+          },
+          {
+            "id": 27,
+            "kode_indikator": "IND-1936",
+            "indikator": "Jumlah Kejadian Konflik SARA",
+            "rumus_perhitungan": "Jumlah Kejadian Konflik SARA = Σ seluruh kejadian konflik SARA dalam periode tertentu",
+            "sumber_data": "Kesbangpol Mahakam Ulu",
+            "definisi_operasional": "total peristiwa konflik sosial yang terjadi dalam suatu wilayah dan periode tertentu yang dipicu oleh perbedaan Suku, Agama, Ras, dan Antar Golongan (SARA), baik dalam bentuk perselisihan, ketegangan, maupun benturan terbuka yang berdampak pada gangguan ketertiban masyarakat.",
+            "tahun_aktif": 2026,
+            "targets": [
+              {
+                "id": 27,
+                "kode_target": "TGT-TRG-TJN-dcae9",
+                "tahun": 2026,
+                "target": 3,
+                "satuan": "kasus"
+              }
+            ]
+          }
+        ],
+        "sasaran_opds": [
+          {
+            "id": 44,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-34035",
+            "sasaran_opd": "Meningkatnya Ketertiban Organisasi Masyarakat",
+            "periode": "2025-2030",
+            "indikators": [
+              {
+                "id": 6,
+                "kode_indikator": "IND-IND-SAR-d5746",
+                "indikator": "Indikator Meningkatnya Ketertiban Organisasi Masyarakat",
+                "rumus_perhitungan": "(realisasi/target)*100",
+                "sumber_data": "BPS",
+                "definisi_operasional": "Meningkatnya Ketertiban Organisasi Masyarakat",
+                "tahun_aktif": 2026,
+                "targets": [
+                  {
+                    "id": 6,
+                    "kode_target": "TGT-TRG-SAR-fe4ec",
+                    "tahun": 2026,
+                    "target": 100,
+                    "satuan": "%"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": 45,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-57907",
+            "sasaran_opd": "Meningkatnya Etika dan Budaya Politik",
+            "periode": "2025-2030",
+            "indikators": null
+          },
+          {
+            "id": 46,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-52547",
+            "sasaran_opd": "Meningkatnya Kesadaran Masyarakat akan Ideologi Pancasila Dan Karakter Kebangsaan",
+            "periode": "2025-2030",
+            "indikators": null
+          },
+          {
+            "id": 47,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-34507",
+            "sasaran_opd": "Meningkatnya Ketahanan Ekonomi, sosial , Budaya dan Agama",
+            "periode": "2025-2030",
+            "indikators": null
+          },
+          {
+            "id": 48,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-20492",
+            "sasaran_opd": "Meningkatnya efektivitas penanganan dan penyelesaian konflik sosial",
+            "periode": "2025-2030",
+            "indikators": null
+          },
+          {
+            "id": 49,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-38274",
+            "sasaran_opd": "Meningkatnya efektivitas penanganan dan penyelesaian konflik sosial",
+            "periode": "2025-2030",
+            "indikators": null
+          },
+          {
+            "id": 50,
+            "kode_tujuan_opd": "TUJ-OPD-181",
+            "kode_sasaran_opd": "SAS-OPD-92536",
+            "sasaran_opd": "Meningkatnya Akuntabilitas Kinerja Perangkat Daerah",
+            "periode": "2025-2030",
+            "indikators": null
+          }
+        ]
+      }
+    ]
+  }
+}
+
+
+I want to create api GET by `kode_sasaran_opd`, http://localhost:8080/manrisk/api/risiko/SAS-OPD-34035
+
+and it will have response
+

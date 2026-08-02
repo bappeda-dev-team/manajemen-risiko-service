@@ -5,10 +5,16 @@ import cc.kertaskerja.manrisk.dto.Risiko.RisikoResDTO;
 import cc.kertaskerja.manrisk.entity.Risiko;
 import cc.kertaskerja.manrisk.exception.ResourceNotFoundException;
 import cc.kertaskerja.manrisk.repository.RisikoRepository;
+import cc.kertaskerja.manrisk.service.risiko.external.ExternalService;
+import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -16,6 +22,7 @@ import java.util.stream.Collectors;
 public class RisikoService {
 
     private final RisikoRepository risikoRepository;
+    private final ExternalService externalService;
 
     public List<RisikoResDTO> getAllRisiko() {
         return risikoRepository.findAll()
@@ -24,11 +31,34 @@ public class RisikoService {
               .collect(Collectors.toList());
     }
 
-    public List<RisikoResDTO> getRisikoByKodeSasaranOpd(String kodeSasaranOpd) {
-        return risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd)
+    public List<RisikoResDTO> getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
+        List<Risiko> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd)
               .stream()
-              .map(this::toResDTO)
+              .sorted(Comparator.comparing(Risiko::getId))
               .collect(Collectors.toList());
+
+        if (risikoList.isEmpty()) {
+            return List.of();
+        }
+
+        SasaranData sasaranData = fetchSasaranData(risikoList, kodeSasaranOpd);
+
+        Risiko first = risikoList.get(0);
+
+        RisikoResDTO dto = RisikoResDTO.builder()
+              .kodeOpd(first.getKodeOpd())
+              .kodeRisiko(first.getKodeRisiko())
+              .tahun(first.getTahun())
+              .kodeSasaranOpd(first.getKodeSasaranOpd())
+              .sasaranOpd(sasaranData.sasaranOpd())
+              .periode(sasaranData.periode())
+              .indikators(sasaranData.indikators())
+              .risiko(risikoList.stream()
+                    .map(risiko -> toRisikoItem(risiko, type))
+                    .collect(Collectors.toList()))
+              .build();
+
+        return List.of(dto);
     }
 
     public RisikoResDTO getRisikoById(Long id) {
@@ -85,6 +115,113 @@ public class RisikoService {
         long next = risikoRepository.count() + 1;
         return String.format("RSK-%04d", next);
     }
+
+    private SasaranData fetchSasaranData(List<Risiko> risikoList, String kodeSasaranOpd) {
+        Set<String> tried = new LinkedHashSet<>();
+        for (Risiko risiko : risikoList) {
+            String kodeOpd = risiko.getKodeOpd();
+            String key = kodeOpd + "|" + risiko.getTahun();
+            if (kodeOpd == null || kodeOpd.isBlank() || !tried.add(key)) {
+                continue;
+            }
+            SasaranData data = findSasaranInExternal(kodeOpd, risiko.getTahun(), kodeSasaranOpd);
+            if (data != null) {
+                return data;
+            }
+        }
+        return new SasaranData(null, null, null);
+    }
+
+    private SasaranData findSasaranInExternal(String kodeOpd, Integer tahun, String kodeSasaranOpd) {
+        try {
+            JsonNode root = externalService.getTujuanSasaran(kodeOpd, tahun);
+            JsonNode tujuanOpds = root.path("data").path("tujuan_opds");
+            for (JsonNode tujuan : tujuanOpds) {
+                JsonNode sasaranOpds = tujuan.path("sasaran_opds");
+                for (JsonNode sasaran : sasaranOpds) {
+                    if (kodeSasaranOpd.equals(sasaran.path("kode_sasaran_opd").asText())) {
+                        return new SasaranData(
+                              sasaran.path("sasaran_opd").asText(null),
+                              sasaran.path("periode").asText(null),
+                              parseIndikators(sasaran.path("indikators"))
+                        );
+                    }
+                }
+            }
+        } catch (RuntimeException e) {
+            return null;
+        }
+        return null;
+    }
+
+    private List<RisikoResDTO.Indikator> parseIndikators(JsonNode indikatorsNode) {
+        if (indikatorsNode == null || !indikatorsNode.isArray()) {
+            return null;
+        }
+
+        List<RisikoResDTO.Indikator> indikators = new ArrayList<>();
+        for (JsonNode node : indikatorsNode) {
+            indikators.add(RisikoResDTO.Indikator.builder()
+                  .id(node.path("id").isNumber() ? node.path("id").asLong() : null)
+                  .kodeIndikator(node.path("kode_indikator").asText(null))
+                  .indikator(node.path("indikator").asText(null))
+                  .rumusPerhitungan(node.path("rumus_perhitungan").asText(null))
+                  .sumberData(node.path("sumber_data").asText(null))
+                  .definisiOperasional(node.path("definisi_operasional").asText(null))
+                  .tahunAktif(node.path("tahun_aktif").isNumber() ? node.path("tahun_aktif").asInt() : null)
+                  .targets(parseTargets(node.path("targets")))
+                  .build());
+        }
+        return indikators;
+    }
+
+    private List<RisikoResDTO.Target> parseTargets(JsonNode targetsNode) {
+        if (targetsNode == null || !targetsNode.isArray()) {
+            return null;
+        }
+
+        List<RisikoResDTO.Target> targets = new ArrayList<>();
+        for (JsonNode node : targetsNode) {
+            targets.add(RisikoResDTO.Target.builder()
+                  .id(node.path("id").isNumber() ? node.path("id").asLong() : null)
+                  .kodeTarget(node.path("kode_target").asText(null))
+                  .tahun(node.path("tahun").isNumber() ? node.path("tahun").asInt() : null)
+                  .target(node.path("target").isNumber() ? node.path("target").numberValue() : null)
+                  .satuan(node.path("satuan").asText(null))
+                  .build());
+        }
+        return targets;
+    }
+
+    private RisikoResDTO.RisikoItem toRisikoItem(Risiko risiko, String type) {
+        boolean identifikasi = "identifikasi".equalsIgnoreCase(type);
+
+        RisikoResDTO.RisikoItem.RisikoItemBuilder builder = RisikoResDTO.RisikoItem.builder()
+              .type(type)
+              .permasalahan(risiko.getPermasalahan())
+              .sebabPermasalahan(risiko.getSebabPermasalahan())
+              .pernyataanRisiko(risiko.getPernyataanRisiko());
+
+        if (!identifikasi) {
+            builder.skalaKemungkinan(risiko.getSkalaKemungkinan())
+                  .skalaDampak(risiko.getSkalaDampak())
+                  .pihakTerkenaRisiko(risiko.getPihakTerkenaRisiko())
+                  .rencanaTindakPengendalian(risiko.getRencanaTindakPengendalian())
+                  .metodePemantauan(risiko.getMetodePemantauan())
+                  .penanggungjawabPemantauan(risiko.getPenanggungjawabPemantauan())
+                  .keterangan(risiko.getKeterangan())
+                  .realisasiTindakPengendalian(risiko.getRealisasiTindakPengendalian())
+                  .dapatTerkendali(risiko.getDapatTerkendali())
+                  .dampak(risiko.getDampak())
+                  .catatan(risiko.getCatatan())
+                  .createdAt(risiko.getCreatedAt())
+                  .updatedAt(risiko.getUpdatedAt());
+        }
+
+        return builder.build();
+    }
+
+    private record SasaranData(String sasaranOpd, String periode, List<RisikoResDTO.Indikator> indikators) {}
 
     private RisikoResDTO toResDTO(Risiko risiko) {
         return RisikoResDTO.builder()

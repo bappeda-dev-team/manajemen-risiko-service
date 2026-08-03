@@ -34,34 +34,11 @@ public class ExternalService {
     private String password;
 
     public JsonNode getTujuanSasaran(String kodeOpd, Integer tahun) {
-        String sessionId = login();
-        return getTujuanSasaran(sessionId, kodeOpd, tahun);
-    }
-
-    private String login() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-
-        Map<String, String> body = Map.of(
-              "username", username,
-              "password", password
-        );
-
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(body, headers);
-
-        ResponseEntity<String> response = restTemplate.exchange(
-              baseUrl + "/auth/login",
-              HttpMethod.POST,
-              request,
-              String.class
-        );
-
-        return parseJson(response.getBody()).get("sessionId").asText();
+        return getTujuanSasaran(kodeOpd, tahun);
     }
 
     private JsonNode getTujuanSasaran(String sessionId, String kodeOpd, Integer tahun) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set("X-Session-Id", sessionId);
         headers.set(HttpHeaders.COOKIE, "sessionId=" + sessionId);
 
         String url = UriComponentsBuilder.fromUriString(baseUrl + "/api/v1/penetapan/opd/tujuan-with-sasaran")

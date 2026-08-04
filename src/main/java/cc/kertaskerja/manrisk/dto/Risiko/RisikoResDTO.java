@@ -86,6 +86,12 @@ public class RisikoResDTO {
     @JsonProperty("catatan")
     private String catatan;
 
+    @JsonProperty("perangkat_yang_menangani")
+    private String perangkatYangMenangani;
+
+    @JsonProperty("kode_perangkat_yang_menangani")
+    private String kodePerangkatYangMenangani;
+
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
 
@@ -198,6 +204,12 @@ public class RisikoResDTO {
 
         @JsonProperty("catatan")
         private String catatan;
+
+        @JsonProperty("perangkat_yang_menangani")
+        private String perangkatYangMenangani;
+
+        @JsonProperty("kode_perangkat_yang_menangani")
+        private String kodePerangkatYangMenangani;
 
         @JsonProperty("created_at")
         private LocalDateTime createdAt;

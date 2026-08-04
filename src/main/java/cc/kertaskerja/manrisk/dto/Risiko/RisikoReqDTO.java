@@ -62,4 +62,10 @@ public class RisikoReqDTO {
 
     @JsonProperty("catatan")
     private String catatan;
+
+    @JsonProperty("perangkat_yang_menangani")
+    private String perangkatYangMenangani;
+
+    @JsonProperty("kode_perangkat_yang_menangani")
+    private String kodePerangkatYangMenangani;
 }

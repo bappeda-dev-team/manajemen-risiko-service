@@ -98,6 +98,8 @@ public class RisikoService {
         existing.setDapatTerkendali(reqDTO.getDapatTerkendali());
         existing.setDampak(reqDTO.getDampak());
         existing.setCatatan(reqDTO.getCatatan());
+        existing.setPerangkatYangMenangani(reqDTO.getPerangkatYangMenangani());
+        existing.setKodePerangkatYangMenangani(reqDTO.getKodePerangkatYangMenangani());
 
         Risiko saved = risikoRepository.save(existing);
 
@@ -214,6 +216,8 @@ public class RisikoService {
                   .dapatTerkendali(risiko.getDapatTerkendali())
                   .dampak(risiko.getDampak())
                   .catatan(risiko.getCatatan())
+                  .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
+                  .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
                   .createdAt(risiko.getCreatedAt())
                   .updatedAt(risiko.getUpdatedAt());
         }
@@ -244,6 +248,8 @@ public class RisikoService {
               .dapatTerkendali(risiko.getDapatTerkendali())
               .dampak(risiko.getDampak())
               .catatan(risiko.getCatatan())
+              .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
+              .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
               .createdAt(risiko.getCreatedAt())
               .updatedAt(risiko.getUpdatedAt())
               .build();
@@ -268,6 +274,8 @@ public class RisikoService {
               .dapatTerkendali(reqDTO.getDapatTerkendali())
               .dampak(reqDTO.getDampak())
               .catatan(reqDTO.getCatatan())
+              .perangkatYangMenangani(reqDTO.getPerangkatYangMenangani())
+              .kodePerangkatYangMenangani(reqDTO.getKodePerangkatYangMenangani())
               .build();
     }
 }

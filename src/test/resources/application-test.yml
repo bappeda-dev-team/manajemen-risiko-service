@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: manrisk
+
+  datasource:
+    url: jdbc:tc:postgresql:17-alpine:///
+
+kertaskerja:
+  api:
+    base-url: ${KERTASKERJA_API_BASE_URL:https://testapi.kertaskerja.cc}
+    username: ${KERTASKERJA_API_USERNAME:admin_test}
+    password: ${KERTASKERJA_API_PASSWORD:TEST_ONLY}
+

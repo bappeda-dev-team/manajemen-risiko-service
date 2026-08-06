@@ -42,9 +42,18 @@ spring:
 
 kertaskerja:
   api:
-    base-url: ${KERTASKERJA_API_BASE_URL:https://testapi.kertaskerja.cc}
-    username: ${KERTASKERJA_API_USERNAME:admin_test}
-    password: ${KERTASKERJA_API_PASSWORD:TEST_ONLY}
+    penetapan:
+      base-url: ${PENETAPAN_API_URL}
+  kode-lembaga: x.xx
+  status: MANAJEMEN-RISIKO-UP
+  cors:
+    enabled: true
+    allowed-hosts:
+      - http://localhost:3000
+      - https://manrisk-test.zeabur.app
+  security:
+    mode: none
+
 
 server:
   port: ${SERVER_PORT:8080}

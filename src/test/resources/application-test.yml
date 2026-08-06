@@ -10,4 +10,11 @@ kertaskerja:
     base-url: ${KERTASKERJA_API_BASE_URL:https://testapi.kertaskerja.cc}
     username: ${KERTASKERJA_API_USERNAME:admin_test}
     password: ${KERTASKERJA_API_PASSWORD:TEST_ONLY}
-
+  kode-lembaga: x.xx
+  status: MANAJEMEN-RISIKO-UP
+  cors:
+    enabled: true
+    allowed-hosts:
+      - http://localhost:3000
+  security:
+    mode: none

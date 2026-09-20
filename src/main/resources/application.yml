@@ -51,6 +51,7 @@ kertaskerja:
     allowed-hosts:
       - http://localhost:3000
       - https://manrisk-test.zeabur.app
+      - https://manrisk-service.zeabur.app
   security:
     mode: none
 

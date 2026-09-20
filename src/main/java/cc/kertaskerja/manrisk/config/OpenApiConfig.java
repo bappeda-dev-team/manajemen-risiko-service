@@ -24,7 +24,10 @@ public class OpenApiConfig {
               .servers(List.of(
                     new Server()
                           .url("http://localhost:8080/manrisk/api")
-                          .description("Development server")
+                          .description("Development server"),
+                    new Server()
+                          .url("https://manrisk-service.zeabur.app/manrisk/api")
+                          .description("Production server")
               ))
               .addSecurityItem(new SecurityRequirement().addList("basicAuth"))
               .components(new Components()

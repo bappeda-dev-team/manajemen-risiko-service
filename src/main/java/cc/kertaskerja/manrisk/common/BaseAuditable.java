@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 public abstract class BaseAuditable {
+
     @CreatedDate
     @Column(name = "created_at", updatable = false)
     protected LocalDateTime createdAt;
@@ -24,11 +25,6 @@ public abstract class BaseAuditable {
     @Column(name = "updated_at")
     protected LocalDateTime updatedAt;
 
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
-    public LocalDateTime getUpdatedAt() {
-        return updatedAt;
-    }
+    // HAPUS manual getter (getCreatedAt & getUpdatedAt)
+    // Lombok @Getter di atas class sudah otomatis membuatkannya dengan aman.
 }

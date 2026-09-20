@@ -32,18 +32,19 @@ public class RisikoController {
 
     @GetMapping("/sasaran/{kodeSasaranOpd}")
     @Operation(summary = "Ambil data risiko berdasarkan kode sasaran")
-    public ResponseEntity<ApiResponse<List<RisikoResDTO>>> getRisikoByKodeSasaranOpd(
+    public ResponseEntity<ApiResponse<RisikoResDTO>> getRisikoByKodeSasaranOpd(
           @PathVariable String kodeSasaranOpd,
           @RequestParam(required = false) String type) {
-        List<RisikoResDTO> result = risikoService.getRisikoByKodeSasaranOpd(kodeSasaranOpd, type);
+
+        RisikoResDTO result = risikoService.getRisikoByKodeSasaranOpd(kodeSasaranOpd, type);
 
         return ResponseEntity.ok(ApiResponse.success(result, ""));
     }
 
-    @GetMapping("/{id}")
-    @Operation(summary = "Ambil data risiko berdasarkan ID")
-    public ResponseEntity<ApiResponse<RisikoResDTO>> getRisikoById(@PathVariable Long id) {
-        RisikoResDTO result = risikoService.getRisikoById(id);
+    @GetMapping("/{kodeRisiko}")
+    @Operation(summary = "Ambil data risiko berdasarkan Kode Risiko")
+    public ResponseEntity<ApiResponse<RisikoResDTO>> getRisikoByKodeRisiko(@PathVariable String kodeRisiko) {
+        RisikoResDTO result = risikoService.getRisikoByKodeRisiko(kodeRisiko);
 
         return ResponseEntity.ok(ApiResponse.success(result, "Retrieved 1 data successfully"));
     }

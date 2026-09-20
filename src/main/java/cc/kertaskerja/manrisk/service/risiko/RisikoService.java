@@ -10,11 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -31,50 +27,49 @@ public class RisikoService {
               .collect(Collectors.toList());
     }
 
-    public List<RisikoResDTO> getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
-        List<Risiko> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd)
-              .stream()
-              .sorted(Comparator.comparing(Risiko::getId))
-              .collect(Collectors.toList());
+    public RisikoResDTO getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
+        List<Risiko> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd);
 
-        if (risikoList.isEmpty()) {
-            return List.of();
+        // Jika data tidak ditemukan, kembalikan objek kosong
+        if (risikoList == null || risikoList.isEmpty()) {
+            return RisikoResDTO.builder()
+                  .kodeSasaranOpd(kodeSasaranOpd)
+                  .risiko(List.of())
+                  .build();
         }
 
-        SasaranData sasaranData = fetchSasaranData(risikoList, kodeSasaranOpd);
+        risikoList = new ArrayList<>(risikoList);
+        risikoList.sort(Comparator.comparing(Risiko::getId));
 
+        // Ambil atribut parent/header dari baris pertama
         Risiko first = risikoList.get(0);
 
-        RisikoResDTO dto = RisikoResDTO.builder()
+        // (Opsional) Jika Anda masih ingin menggabungkan dengan data ExternalService,
+        // aktifkan kembali 2 baris di bawah ini dan masukkan ke dalam builder.
+        // SasaranData sasaranData = fetchSasaranData(risikoList, kodeSasaranOpd);
+
+        // Membangun satu Response Object yang membungkus list
+        return RisikoResDTO.builder()
               .kodeOpd(first.getKodeOpd())
               .kodeRisiko(first.getKodeRisiko())
               .tahun(first.getTahun())
               .kodeSasaranOpd(first.getKodeSasaranOpd())
-              .sasaranOpd(sasaranData.sasaranOpd())
-              .periode(sasaranData.periode())
-              .indikators(sasaranData.indikators())
               .risiko(risikoList.stream()
                     .map(risiko -> toRisikoItem(risiko, type))
                     .collect(Collectors.toList()))
               .build();
-
-        return List.of(dto);
     }
 
-    public RisikoResDTO getRisikoById(Long id) {
-        Risiko risiko = risikoRepository.findById(id)
-              .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
+    public RisikoResDTO getRisikoByKodeRisiko(String kodeRisiko) {
+        Risiko risiko = risikoRepository.findByKodeRisiko(kodeRisiko)
+              .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with kodeRisiko: " + kodeRisiko));
 
         return toResDTO(risiko);
     }
-
     public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
         Risiko risiko = toEntity(reqDTO);
         risiko.setKodeRisiko(generateKodeRisiko());
-
-        Risiko saved = risikoRepository.save(risiko);
-
-        return toResDTO(saved);
+        return toResDTO(risikoRepository.save(risiko));
     }
 
     public RisikoResDTO updateRisiko(Long id, RisikoReqDTO reqDTO) {
@@ -101,15 +96,12 @@ public class RisikoService {
         existing.setPerangkatYangMenangani(reqDTO.getPerangkatYangMenangani());
         existing.setKodePerangkatYangMenangani(reqDTO.getKodePerangkatYangMenangani());
 
-        Risiko saved = risikoRepository.save(existing);
-
-        return toResDTO(saved);
+        return toResDTO(risikoRepository.save(existing));
     }
 
     public void deleteRisiko(Long id) {
         Risiko existing = risikoRepository.findById(id)
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
-
         risikoRepository.delete(existing);
     }
 
@@ -119,13 +111,14 @@ public class RisikoService {
     }
 
     private SasaranData fetchSasaranData(List<Risiko> risikoList, String kodeSasaranOpd) {
-        Set<String> tried = new LinkedHashSet<>();
+        Set<String> tried = new HashSet<>();
         for (Risiko risiko : risikoList) {
             String kodeOpd = risiko.getKodeOpd();
+            if (kodeOpd == null || kodeOpd.isBlank()) continue;
+
             String key = kodeOpd + "|" + risiko.getTahun();
-            if (kodeOpd == null || kodeOpd.isBlank() || !tried.add(key)) {
-                continue;
-            }
+            if (!tried.add(key)) continue;
+
             SasaranData data = findSasaranInExternal(kodeOpd, risiko.getTahun(), kodeSasaranOpd);
             if (data != null) {
                 return data;
@@ -137,11 +130,17 @@ public class RisikoService {
     private SasaranData findSasaranInExternal(String kodeOpd, Integer tahun, String kodeSasaranOpd) {
         try {
             JsonNode root = externalService.getTujuanSasaran(kodeOpd, tahun);
+            if (root == null || !root.hasNonNull("data")) return null;
+
             JsonNode tujuanOpds = root.path("data").path("tujuan_opds");
+            if (!tujuanOpds.isArray()) return null;
+
             for (JsonNode tujuan : tujuanOpds) {
                 JsonNode sasaranOpds = tujuan.path("sasaran_opds");
+                if (!sasaranOpds.isArray()) continue;
+
                 for (JsonNode sasaran : sasaranOpds) {
-                    if (kodeSasaranOpd.equals(sasaran.path("kode_sasaran_opd").asText())) {
+                    if (kodeSasaranOpd.equals(sasaran.path("kode_sasaran_opd").asText(null))) {
                         return new SasaranData(
                               sasaran.path("sasaran_opd").asText(null),
                               sasaran.path("periode").asText(null),
@@ -150,7 +149,8 @@ public class RisikoService {
                     }
                 }
             }
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
+            // Log the error if necessary, avoid throwing to prevent breaking the flow
             return null;
         }
         return null;

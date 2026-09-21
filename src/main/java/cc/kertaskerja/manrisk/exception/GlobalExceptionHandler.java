@@ -195,10 +195,12 @@ public class GlobalExceptionHandler {
 
         logger.warning("Resource not found at " + request.getRequestURI() + ": " + ex.getMessage());
 
+        // URUTAN PARAMETER: (status, data, message)
+        // Kita kirim List kosong (java.util.Collections.emptyList()) agar menjadi "data": [] di JSON
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.NOT_FOUND.value(),
-              ex.getMessage(),
-              null
+              java.util.Collections.emptyList(), // Mengisi "data" dengan array kosong []
+              ex.getMessage()                    // Mengisi "message"
         );
 
         return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);

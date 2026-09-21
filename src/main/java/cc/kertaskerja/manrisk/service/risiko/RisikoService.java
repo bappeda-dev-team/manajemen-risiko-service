@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -69,6 +70,7 @@ public class RisikoService {
         return toResDTO(risiko);
     }
 
+    @Transactional
     public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
         Risiko risiko = toEntity(reqDTO);
 
@@ -79,8 +81,11 @@ public class RisikoService {
         SasaranData sasaranData = findSasaranInExternal(kodeOpd, tahun, kodeSasaranOpd);
 
         if (sasaranData != null) {
-            risiko.setKodeRisiko(generateKodeRisiko());
-            return toResDTO(risikoRepository.save(risiko));
+            // ID dari database bersifat unik dan tidak kembali ke nomor lama
+            // ketika record dihapus. Kode risiko diturunkan dari ID tersebut.
+            Risiko saved = risikoRepository.saveAndFlush(risiko);
+            saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
+            return toResDTO(risikoRepository.save(saved));
         } else {
             throw new ResourceNotFoundException("Kode Sasaran OPD tidak ditemukan: " + kodeSasaranOpd);
         }
@@ -119,9 +124,8 @@ public class RisikoService {
         risikoRepository.delete(existing);
     }
 
-    private String generateKodeRisiko() {
-        long next = risikoRepository.count() + 1;
-        return String.format("RSK-%04d", next);
+    private String formatKodeRisiko(Long id) {
+        return String.format("RSK-%04d", id);
     }
 
     private SasaranData fetchSasaranData(List<Risiko> risikoList, String kodeSasaranOpd) {

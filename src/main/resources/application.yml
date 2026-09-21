@@ -10,8 +10,13 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      connection-timeout: 2000
+      connection-timeout: 10000
+      validation-timeout: 3000
       maximum-pool-size: 5
+      minimum-idle: 1
+      idle-timeout: 600000
+      max-lifetime: 1200000
+      keepalive-time: 300000
 
   flyway:
     url: ${spring.datasource.url}

@@ -8,11 +8,13 @@ import cc.kertaskerja.manrisk.repository.RisikoRepository;
 import cc.kertaskerja.manrisk.service.risiko.external.ExternalService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RisikoService {
@@ -66,10 +68,22 @@ public class RisikoService {
 
         return toResDTO(risiko);
     }
+
     public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
         Risiko risiko = toEntity(reqDTO);
-        risiko.setKodeRisiko(generateKodeRisiko());
-        return toResDTO(risikoRepository.save(risiko));
+
+        String kodeOpd = risiko.getKodeOpd();
+        Integer tahun = risiko.getTahun();
+        String kodeSasaranOpd = risiko.getKodeSasaranOpd();
+
+        SasaranData sasaranData = findSasaranInExternal(kodeOpd, tahun, kodeSasaranOpd);
+
+        if (sasaranData != null) {
+            risiko.setKodeRisiko(generateKodeRisiko());
+            return toResDTO(risikoRepository.save(risiko));
+        } else {
+            throw new ResourceNotFoundException("Kode Sasaran OPD tidak ditemukan: " + kodeSasaranOpd);
+        }
     }
 
     public RisikoResDTO updateRisiko(Long id, RisikoReqDTO reqDTO) {
@@ -128,6 +142,10 @@ public class RisikoService {
     }
 
     private SasaranData findSasaranInExternal(String kodeOpd, Integer tahun, String kodeSasaranOpd) {
+        System.out.println("-> Mencari ke eksternal dengan parameter:");
+        System.out.println("   kodeOpd        : " + kodeOpd);
+        System.out.println("   tahun          : " + tahun);
+        System.out.println("   kodeSasaranOpd : " + kodeSasaranOpd);
         try {
             JsonNode root = externalService.getTujuanSasaran(kodeOpd, tahun);
             if (root == null || !root.hasNonNull("data")) return null;

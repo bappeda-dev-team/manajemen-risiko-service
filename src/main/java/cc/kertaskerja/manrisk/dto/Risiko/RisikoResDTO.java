@@ -160,6 +160,12 @@ public class RisikoResDTO {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class RisikoItem {
 
+        @JsonProperty("id")
+        private Long id;
+
+        @JsonProperty("kode_risiko")
+        private String kodeRisiko;
+
         @JsonProperty("type")
         private String type;
 

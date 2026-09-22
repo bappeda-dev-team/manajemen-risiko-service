@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: manrisk-db
+    environment:
+      POSTGRES_DB: manajemen_risiko
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - manrisk-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d manajemen_risiko"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: manrisk-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Point the app at the db service instead of localhost
+      DB_URL: jdbc:postgresql://db:5432/manajemen_risiko
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      SERVER_PORT: 8080
+      SWAGGER_SERVER_URL: http://localhost:8080/manrisk/api
+    ports:
+      - "8080:8080"
+
+volumes:
+  manrisk-pgdata:

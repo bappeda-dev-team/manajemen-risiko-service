@@ -209,6 +209,8 @@ public class RisikoService {
         boolean identifikasi = "identifikasi".equalsIgnoreCase(type);
 
         RisikoResDTO.RisikoItem.RisikoItemBuilder builder = RisikoResDTO.RisikoItem.builder()
+              .id(risiko.getId())
+              .kodeRisiko(risiko.getKodeRisiko())
               .type(type)
               .permasalahan(risiko.getPermasalahan())
               .sebabPermasalahan(risiko.getSebabPermasalahan())

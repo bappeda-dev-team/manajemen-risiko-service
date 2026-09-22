@@ -59,8 +59,6 @@ public class ExternalService {
             return cachedSessionId;
         }
 
-        System.out.println("-> Melakukan Login ke API Eksternal...");
-
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -89,7 +87,6 @@ public class ExternalService {
                         for (String part : parts) {
                             if (part.trim().startsWith("sessionId=")) {
                                 this.cachedSessionId = part.trim().substring("sessionId=".length());
-                                System.out.println("-> [SUKSES] Berhasil login. SessionID didapat: " + this.cachedSessionId);
                                 return this.cachedSessionId;
                             }
                         }
@@ -104,8 +101,8 @@ public class ExternalService {
             //     return this.cachedSessionId;
             // }
 
-        } catch (Exception e) {
-            System.out.println("-> [GAGAL] Gagal login ke API Eksternal: " + e.getMessage());
+        } catch (Exception ignored) {
+            // Credential and session details must not be written to application logs.
         }
 
         return "";

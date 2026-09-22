@@ -68,6 +68,21 @@ server:
   tomcat:
     allow-encoded-slashes: true
 
+# Generate AI is disabled until its server-only variables are supplied manually.
+manrisk:
+  ai:
+    enabled: ${MANRISK_AI_ENABLED:false}
+    internal-token: ${RISIKO_AI_INTERNAL_TOKEN:}
+    rate-limit-per-minute: ${MANRISK_AI_RATE_LIMIT_PER_MINUTE:5}
+    max-concurrent-requests: ${MANRISK_AI_MAX_CONCURRENT_REQUESTS:5}
+    connect-timeout-seconds: ${MANRISK_AI_CONNECT_TIMEOUT_SECONDS:3}
+    request-timeout-seconds: ${MANRISK_AI_REQUEST_TIMEOUT_SECONDS:45}
+    provider-timeout-seconds: ${MANRISK_AI_PROVIDER_TIMEOUT_SECONDS:30}
+    openrouter:
+      base-url: ${OPENROUTER_BASE_URL:https://openrouter.ai/api/v1}
+      api-key: ${OPENROUTER_API_KEY:}
+      model: ${OPENROUTER_MODEL:openai/gpt-4.1-mini}
+
 logging:
   level:
     root: warn
@@ -94,6 +109,7 @@ logging:
         pengajuan_kta:
           security: DEBUG
         aop: DEBUG
+    cc.kertaskerja.manrisk.service.risiko.ai: INFO
 
 springdoc:
   api-docs:

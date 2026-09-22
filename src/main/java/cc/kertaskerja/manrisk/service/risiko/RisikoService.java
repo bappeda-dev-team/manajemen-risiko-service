@@ -74,12 +74,11 @@ public class RisikoService {
         SasaranData sasaranData = findSasaranInExternal(kodeOpd, tahun, kodeSasaranOpd);
 
         if (sasaranData != null) {
-            // Generate kode risiko acak & pastikan unik sebelum disimpan
-            risiko.setKodeRisiko(generateUniqueKodeRisiko());
-
-            // Simpan ke database
-            Risiko saved = risikoRepository.save(risiko);
-            return toResDTO(saved);
+            // ID dari database bersifat unik dan tidak kembali ke nomor lama
+            // ketika record dihapus. Kode risiko diturunkan dari ID tersebut.
+            Risiko saved = risikoRepository.saveAndFlush(risiko);
+            saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
+            return toResDTO(risikoRepository.save(saved));
         } else {
             throw new ResourceNotFoundException("Kode Sasaran OPD tidak ditemukan: " + kodeSasaranOpd);
         }
@@ -118,20 +117,8 @@ public class RisikoService {
         risikoRepository.delete(existing);
     }
 
-    private String generateUniqueKodeRisiko() {
-        Random random = new Random();
-        String kodeRisiko;
-
-        while (true) {
-            int randomNumber = random.nextInt(9999) + 1;
-
-            kodeRisiko = String.format("RSK-%04d", randomNumber);
-
-            if (risikoRepository.findByKodeRisiko(kodeRisiko).isEmpty()) {
-                break;
-            }
-        }
-        return kodeRisiko;
+    private String formatKodeRisiko(Long id) {
+        return String.format("RSK-%04d", id);
     }
 
     private SasaranData fetchSasaranData(List<Risiko> risikoList, String kodeSasaranOpd) {

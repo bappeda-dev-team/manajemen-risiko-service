@@ -33,7 +33,6 @@ public class RisikoService {
     public RisikoResDTO getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
         List<Risiko> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd);
 
-        // Jika data tidak ditemukan, kembalikan objek kosong
         if (risikoList == null || risikoList.isEmpty()) {
             return RisikoResDTO.builder()
                   .kodeSasaranOpd(kodeSasaranOpd)
@@ -44,14 +43,8 @@ public class RisikoService {
         risikoList = new ArrayList<>(risikoList);
         risikoList.sort(Comparator.comparing(Risiko::getId));
 
-        // Ambil atribut parent/header dari baris pertama
         Risiko first = risikoList.get(0);
 
-        // (Opsional) Jika Anda masih ingin menggabungkan dengan data ExternalService,
-        // aktifkan kembali 2 baris di bawah ini dan masukkan ke dalam builder.
-        // SasaranData sasaranData = fetchSasaranData(risikoList, kodeSasaranOpd);
-
-        // Membangun satu Response Object yang membungkus list
         return RisikoResDTO.builder()
               .kodeOpd(first.getKodeOpd())
               .kodeRisiko(first.getKodeRisiko())
@@ -146,10 +139,6 @@ public class RisikoService {
     }
 
     private SasaranData findSasaranInExternal(String kodeOpd, Integer tahun, String kodeSasaranOpd) {
-        System.out.println("-> Mencari ke eksternal dengan parameter:");
-        System.out.println("   kodeOpd        : " + kodeOpd);
-        System.out.println("   tahun          : " + tahun);
-        System.out.println("   kodeSasaranOpd : " + kodeSasaranOpd);
         try {
             JsonNode root = externalService.getTujuanSasaran(kodeOpd, tahun);
             if (root == null || !root.hasNonNull("data")) return null;
@@ -172,7 +161,6 @@ public class RisikoService {
                 }
             }
         } catch (Exception e) {
-            // Log the error if necessary, avoid throwing to prevent breaking the flow
             return null;
         }
         return null;

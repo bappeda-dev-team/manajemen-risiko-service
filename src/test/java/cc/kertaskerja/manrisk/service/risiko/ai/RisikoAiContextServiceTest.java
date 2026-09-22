@@ -2,7 +2,6 @@ package cc.kertaskerja.manrisk.service.risiko.ai;
 
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiReqDTO;
 import cc.kertaskerja.manrisk.exception.AiException;
-import cc.kertaskerja.manrisk.service.risiko.external.ExternalService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import org.junit.jupiter.api.Test;
@@ -13,13 +12,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verifyNoInteractions;
 
 class RisikoAiContextServiceTest {
-    private final ExternalService externalService = mock(ExternalService.class);
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final RisikoAiContextService service = new RisikoAiContextService(externalService, objectMapper);
+    private final RisikoAiContextService service = new RisikoAiContextService(objectMapper);
 
     @Test
     void normalizesClientContextWithoutCallingPenetapan() {
@@ -32,7 +28,6 @@ class RisikoAiContextServiceTest {
         assertNull(result.value().get("indikator").textValue());
         assertEquals(new BigDecimal("1200"), result.value().path("pagu").decimalValue());
         assertEquals(64, result.hash().length());
-        verifyNoInteractions(externalService);
     }
 
     @Test

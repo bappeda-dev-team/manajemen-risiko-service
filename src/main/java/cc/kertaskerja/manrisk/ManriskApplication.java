@@ -7,10 +7,11 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import cc.kertaskerja.manrisk.config.KertaskerjaProperties;
 import cc.kertaskerja.manrisk.config.RisikoAiProperties;
+import cc.kertaskerja.manrisk.config.RisikoInternalProperties;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EnableConfigurationProperties({KertaskerjaProperties.class, RisikoAiProperties.class})
+@EnableConfigurationProperties({KertaskerjaProperties.class, RisikoAiProperties.class, RisikoInternalProperties.class})
 public class ManriskApplication {
 
 	public static void main(String[] args) {

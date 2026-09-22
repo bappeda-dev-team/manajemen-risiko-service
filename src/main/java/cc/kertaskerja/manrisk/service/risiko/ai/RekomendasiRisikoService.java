@@ -31,7 +31,7 @@ public class RekomendasiRisikoService {
 
         Instant deadline = Instant.now().plusSeconds(Math.max(1, properties.requestTimeoutSeconds()));
         try (RisikoAiRequestGuard.Permit ignored = requestGuard.acquire(caller, request.requestId())) {
-            RisikoAiContextService.ResolvedContext context = resolveContext(request);
+            RisikoAiContextService.ResolvedContext context = contextService.normalize(request.context());
             Duration remaining = remaining(deadline);
             RisikoAiPromptFactory.Prompt prompt = promptFactory.build(request, context.value());
             JsonNode output = openRouterClient.generate(prompt,
@@ -52,28 +52,6 @@ public class RekomendasiRisikoService {
             throw new AiException(400, "AI_INVALID_INPUT", "Input generate AI tidak valid.");
         }
         try { UUID.fromString(request.requestId()); } catch (IllegalArgumentException exception) { throw new AiException(400, "AI_INVALID_INPUT", "Request ID tidak valid."); }
-    }
-
-    private RisikoAiContextService.ResolvedContext resolveContext(GenerateAiReqDTO request) {
-        if (request.context() != null) {
-            return contextService.normalize(request.context());
-        }
-
-        // Jalur legacy sementara agar backend dapat dideploy sebelum frontend.
-        GenerateAiReqDTO.Scope scope = request.scope();
-        String contextVersion = request.contextVersion();
-        if (scope == null || contextVersion == null || contextVersion.length() != 64
-                || scope.kodeOpd() == null || scope.kodeOpd().isBlank() || scope.kodeOpd().length() > 128
-                || scope.kodeSasaran() == null || scope.kodeSasaran().isBlank() || scope.kodeSasaran().length() > 128
-                || scope.tahun() == null || scope.tahun() < 1900 || scope.tahun() > 2100
-                || (scope.kodeIndikator() != null && scope.kodeIndikator().length() > 128)) {
-            throw new AiException(400, "AI_INVALID_INPUT", "Input generate AI tidak valid.");
-        }
-        RisikoAiContextService.ResolvedContext context = contextService.resolve(scope);
-        if (!context.hash().equals(contextVersion)) {
-            throw new AiException(409, "AI_CONTEXT_CHANGED", "Konteks sasaran berubah. Muat ulang data sebelum generate.");
-        }
-        return context;
     }
 
     private Duration remaining(Instant deadline) {

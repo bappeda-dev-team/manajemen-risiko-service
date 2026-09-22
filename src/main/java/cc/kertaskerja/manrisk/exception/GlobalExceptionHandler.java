@@ -34,6 +34,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
     }
 
+    @ExceptionHandler(RiskException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRiskException(RiskException ex, HttpServletRequest request) {
+        logger.warning("Risk request failed at " + request.getRequestURI() + ": " + ex.getCode());
+        ApiResponse<Object> response = ApiResponse.error(ex.getStatus(),
+              Map.of("code", ex.getCode()), ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
+    }
+
     // ========== 400 BAD REQUEST EXCEPTIONS ==========
 
     @ExceptionHandler(BadRequestException.class)
@@ -71,6 +79,16 @@ public class GlobalExceptionHandler {
                   HttpStatus.BAD_REQUEST.value(),
                   Map.of("code", code, "fields", validationErrors),
                   message
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        if (isRiskRequest(request)) {
+            logger.warning("Risk request validation failed at " + request.getRequestURI());
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", "RISK_INVALID_INPUT", "fields", validationErrors),
+                  "Input risiko tidak valid."
             );
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
@@ -123,6 +141,17 @@ public class GlobalExceptionHandler {
             return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
         }
 
+
+        if (isRiskRequest(request)) {
+            logger.warning("Risk request contains malformed JSON at " + request.getRequestURI());
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", "RISK_INVALID_INPUT"),
+                  "Format request risiko tidak valid."
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
         logger.warning("HTTP Message Not Readable Exception: " + ex.getMessage());
 
         ApiResponse<Object> response = ApiResponse.error(
@@ -135,6 +164,10 @@ public class GlobalExceptionHandler {
 
     private boolean isAiGenerateRequest(HttpServletRequest request) {
         return request.getRequestURI().endsWith("/risiko/generate-ai");
+    }
+
+    private boolean isRiskRequest(HttpServletRequest request) {
+        return request.getRequestURI().contains("/risiko");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

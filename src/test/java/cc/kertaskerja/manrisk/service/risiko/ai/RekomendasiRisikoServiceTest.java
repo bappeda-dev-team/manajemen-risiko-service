@@ -18,7 +18,6 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +36,7 @@ class RekomendasiRisikoServiceTest {
         RisikoAiProperties properties = new RisikoAiProperties(
                 true,
                 new RisikoAiProperties.OpenRouter("https://openrouter.ai/api/v1", "test-key", "test-model"),
-                "test-internal-token", 30, 4, 5, 60, 30);
+                30, 4, 5, 60, 30);
         service = new RekomendasiRisikoService(
                 properties,
                 new RisikoAiRequestGuard(properties),
@@ -54,7 +53,7 @@ class RekomendasiRisikoServiceTest {
                 "OPD-001", 2026, null, null, "SAS-001", "Sasaran utama",
                 null, null, null, null, null, "OPD Contoh");
         GenerateAiReqDTO request = new GenerateAiReqDTO(
-                UUID.randomUUID().toString(), "permasalahan", clientContext, null, null,
+                UUID.randomUUID().toString(), "permasalahan", clientContext,
                 Map.of("permasalahan", "", "sebab_permasalahan", ""));
         ObjectNode canonicalContext = objectMapper.createObjectNode().put("kode_opd", "OPD-001");
         RisikoAiContextService.ResolvedContext resolved =
@@ -73,6 +72,5 @@ class RekomendasiRisikoServiceTest {
         assertEquals("a".repeat(64), response.contextHash());
         assertEquals("test-model", response.model());
         verify(contextService).normalize(clientContext);
-        verify(contextService, never()).resolve(any());
     }
 }

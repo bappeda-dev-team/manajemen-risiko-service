@@ -1,9 +1,10 @@
 package cc.kertaskerja.manrisk.service.risiko;
 
+import cc.kertaskerja.manrisk.dto.Risiko.RisikoReqDTO;
 import cc.kertaskerja.manrisk.dto.Risiko.RisikoResDTO;
 import cc.kertaskerja.manrisk.entity.Risiko;
+import cc.kertaskerja.manrisk.exception.RiskException;
 import cc.kertaskerja.manrisk.repository.RisikoRepository;
-import cc.kertaskerja.manrisk.service.risiko.external.ExternalService;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,9 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,9 +29,6 @@ class RisikoServiceTest {
 
     @Mock
     private RisikoRepository risikoRepository;
-
-    @Mock
-    private ExternalService externalService;
 
     @InjectMocks
     private RisikoService risikoService;
@@ -91,6 +92,33 @@ class RisikoServiceTest {
         assertEquals("RSK-0007", item.path("kode_risiko").asText());
     }
 
+    @Test
+    void createsRiskWithoutAnExternalSasaranLookup() {
+        when(risikoRepository.saveAndFlush(any(Risiko.class))).thenAnswer(invocation -> {
+            Risiko saved = invocation.getArgument(0);
+            saved.setId(42L);
+            return saved;
+        });
+        when(risikoRepository.save(any(Risiko.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        RisikoResDTO response = risikoService.createRisiko(request("OPD-001", 2026, KODE_SASARAN));
+
+        assertEquals(42L, response.getId());
+        assertEquals("RSK-0042", response.getKodeRisiko());
+        verify(risikoRepository).saveAndFlush(any(Risiko.class));
+    }
+
+    @Test
+    void rejectsChangingRiskReferenceDuringUpdate() {
+        when(risikoRepository.findById(2L)).thenReturn(java.util.Optional.of(risiko(2L, "RSK-0002")));
+
+        RiskException error = assertThrows(RiskException.class,
+              () -> risikoService.updateRisiko(2L, request("OPD-002", 2026, KODE_SASARAN)));
+
+        assertEquals(409, error.getStatus());
+        assertEquals("RISK_REFERENCE_IMMUTABLE", error.getCode());
+    }
+
     private void assertItemIdentity(RisikoResDTO.RisikoItem item, Long id, String kodeRisiko, String type) {
         assertEquals(id, item.getId());
         assertEquals(kodeRisiko, item.getKodeRisiko());
@@ -109,6 +137,19 @@ class RisikoServiceTest {
               .pernyataanRisiko("Pernyataan " + id)
               .skalaKemungkinan(3)
               .skalaDampak(4)
+              .build();
+    }
+
+    private RisikoReqDTO request(String kodeOpd, Integer tahun, String kodeSasaran) {
+        return RisikoReqDTO.builder()
+              .kodeOpd(kodeOpd)
+              .tahun(tahun)
+              .kodeSasaranOpd(kodeSasaran)
+              .pernyataanRisiko("Pernyataan")
+              .skalaKemungkinan(3)
+              .skalaDampak(4)
+              .rencanaTindakPengendalian("RTP")
+              .kodePerangkatYangMenangani("OPD-001")
               .build();
     }
 }

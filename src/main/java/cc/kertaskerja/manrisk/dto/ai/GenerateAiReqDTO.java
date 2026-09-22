@@ -17,9 +17,7 @@ import java.util.Map;
 public record GenerateAiReqDTO(
         @NotBlank @Size(max = 64) String requestId,
         @NotBlank @Size(max = 64) String type,
-        @Valid Context context,
-        @Valid Scope scope,
-        @Size(min = 64, max = 64) String contextVersion,
+        @NotNull @Valid Context context,
         @NotNull Map<String, String> input
 ) {
     @JsonIgnoreProperties(ignoreUnknown = false)
@@ -36,14 +34,5 @@ public record GenerateAiReqDTO(
             @Size(max = 100) String satuan,
             @PositiveOrZero BigDecimal pagu,
             @JsonProperty("pemilik_risiko") @Size(max = 500) String pemilikRisiko
-    ) {}
-
-    /** Sementara untuk rollout tanpa downtime; hapus setelah frontend context stabil. */
-    @JsonIgnoreProperties(ignoreUnknown = false)
-    public record Scope(
-            @NotBlank @Size(max = 128) String kodeOpd,
-            @NotBlank @Size(max = 128) String kodeSasaran,
-            @NotNull @Min(1900) @Max(2100) Integer tahun,
-            @Size(max = 128) String kodeIndikator
     ) {}
 }

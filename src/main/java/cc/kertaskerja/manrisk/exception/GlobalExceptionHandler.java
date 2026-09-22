@@ -26,6 +26,14 @@ public class GlobalExceptionHandler {
 
     private static final Logger logger = Logger.getLogger(GlobalExceptionHandler.class.getName());
 
+    @ExceptionHandler(AiException.class)
+    public ResponseEntity<ApiResponse<Object>> handleAiException(AiException ex, HttpServletRequest request) {
+        logger.warning("AI request failed at " + request.getRequestURI() + ": " + ex.getCode());
+        ApiResponse<Object> response = ApiResponse.error(ex.getStatus(),
+                Map.of("code", ex.getCode()), ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
+    }
+
     // ========== 400 BAD REQUEST EXCEPTIONS ==========
 
     @ExceptionHandler(BadRequestException.class)
@@ -312,4 +320,3 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }
-

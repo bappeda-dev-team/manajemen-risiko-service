@@ -31,10 +31,7 @@ public class RekomendasiRisikoService {
 
         Instant deadline = Instant.now().plusSeconds(Math.max(1, properties.requestTimeoutSeconds()));
         try (RisikoAiRequestGuard.Permit ignored = requestGuard.acquire(caller, request.requestId())) {
-            RisikoAiContextService.ResolvedContext context = contextService.resolve(request.scope());
-            if (!context.fingerprint().equals(request.contextVersion())) {
-                throw new AiException(409, "AI_CONTEXT_CHANGED", "Konteks sasaran berubah. Muat ulang data sebelum generate.");
-            }
+            RisikoAiContextService.ResolvedContext context = resolveContext(request);
             Duration remaining = remaining(deadline);
             RisikoAiPromptFactory.Prompt prompt = promptFactory.build(request, context.value());
             JsonNode output = openRouterClient.generate(prompt,
@@ -43,19 +40,40 @@ public class RekomendasiRisikoService {
             // Do not expose JsonNode in an API DTO: non-Jackson serializers render its
             // Java bean metadata instead of the generated JSON payload.
             Object result = objectMapper.convertValue(normalized, Object.class);
-            return new GenerateAiResDTO(request.requestId(), request.type(), context.fingerprint(), result,
+            return new GenerateAiResDTO(request.requestId(), request.type(), context.hash(), result,
                     properties.openrouter().model());
         }
     }
 
     private void validateRequest(GenerateAiReqDTO request) {
-        if (request.requestId().length() > 64 || request.type().length() > 64 || request.contextVersion().length() != 64
-                || request.scope().kodeOpd().length() > 128 || request.scope().kodeSasaran().length() > 128
-                || (request.scope().kodeIndikator() != null && request.scope().kodeIndikator().length() > 128)
-                || request.scope().tahun() < 1900 || request.scope().tahun() > 2100) {
+        if (request == null || request.requestId() == null || request.requestId().isBlank()
+                || request.type() == null || request.type().isBlank() || request.input() == null
+                || request.requestId().length() > 64 || request.type().length() > 64) {
             throw new AiException(400, "AI_INVALID_INPUT", "Input generate AI tidak valid.");
         }
         try { UUID.fromString(request.requestId()); } catch (IllegalArgumentException exception) { throw new AiException(400, "AI_INVALID_INPUT", "Request ID tidak valid."); }
+    }
+
+    private RisikoAiContextService.ResolvedContext resolveContext(GenerateAiReqDTO request) {
+        if (request.context() != null) {
+            return contextService.normalize(request.context());
+        }
+
+        // Jalur legacy sementara agar backend dapat dideploy sebelum frontend.
+        GenerateAiReqDTO.Scope scope = request.scope();
+        String contextVersion = request.contextVersion();
+        if (scope == null || contextVersion == null || contextVersion.length() != 64
+                || scope.kodeOpd() == null || scope.kodeOpd().isBlank() || scope.kodeOpd().length() > 128
+                || scope.kodeSasaran() == null || scope.kodeSasaran().isBlank() || scope.kodeSasaran().length() > 128
+                || scope.tahun() == null || scope.tahun() < 1900 || scope.tahun() > 2100
+                || (scope.kodeIndikator() != null && scope.kodeIndikator().length() > 128)) {
+            throw new AiException(400, "AI_INVALID_INPUT", "Input generate AI tidak valid.");
+        }
+        RisikoAiContextService.ResolvedContext context = contextService.resolve(scope);
+        if (!context.hash().equals(contextVersion)) {
+            throw new AiException(409, "AI_CONTEXT_CHANGED", "Konteks sasaran berubah. Muat ulang data sebelum generate.");
+        }
+        return context;
     }
 
     private Duration remaining(Instant deadline) {

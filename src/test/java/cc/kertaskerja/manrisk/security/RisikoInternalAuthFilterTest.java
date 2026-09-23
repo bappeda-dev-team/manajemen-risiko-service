@@ -39,4 +39,54 @@ class RisikoInternalAuthFilterTest {
         assertEquals(200, response.getStatus());
         assertEquals("user-1", request.getAttribute(RisikoInternalAuthFilter.CALLER_ATTRIBUTE));
     }
+
+    @Test
+    void rejectsPemdaRequestWithoutInternalCredentials() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/risiko-pemda");
+        request.setServletPath("/risiko-pemda");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertEquals(401, response.getStatus());
+    }
+
+    @Test
+    void rejectsPemdaRequestWithoutCaller() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/risiko-pemda");
+        request.setServletPath("/risiko-pemda");
+        request.addHeader("Authorization", "Bearer shared-secret");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertEquals(401, response.getStatus());
+    }
+
+    @Test
+    void rejectsPemdaRequestWithWrongToken() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/risiko-pemda");
+        request.setServletPath("/risiko-pemda");
+        request.addHeader("Authorization", "Bearer wrong-secret");
+        request.addHeader(RisikoInternalAuthFilter.CALLER_HEADER, "user-2");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertEquals(401, response.getStatus());
+    }
+
+    @Test
+    void acceptsPemdaRequestWithSharedTokenAndCaller() throws Exception {
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/risiko-pemda/1");
+        request.setServletPath("/risiko-pemda/1");
+        request.addHeader("Authorization", "Bearer shared-secret");
+        request.addHeader(RisikoInternalAuthFilter.CALLER_HEADER, "user-2");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        assertEquals(200, response.getStatus());
+        assertEquals("user-2", request.getAttribute(RisikoInternalAuthFilter.CALLER_ATTRIBUTE));
+    }
 }

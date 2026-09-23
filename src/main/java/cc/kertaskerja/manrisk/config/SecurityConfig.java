@@ -44,13 +44,14 @@ public class SecurityConfig {
               .csrf(AbstractHttpConfigurer::disable)
               .addFilterBefore(risikoInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
               .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/risiko", "/risiko/**").permitAll()
+                    .requestMatchers("/risiko", "/risiko/**", "/risiko-pemda", "/risiko-pemda/**").permitAll()
                     .anyRequest().authenticated())
               .oauth2ResourceServer(oauth -> oauth
                     // /risiko memakai shared internal bearer token, bukan JWT user.
                     .bearerTokenResolver(request -> {
                         String path = request.getServletPath();
-                        if ("/risiko".equals(path) || path.startsWith("/risiko/")) return null;
+                        if ("/risiko".equals(path) || path.startsWith("/risiko/")
+                              || "/risiko-pemda".equals(path) || path.startsWith("/risiko-pemda/")) return null;
                         return bearerTokenResolver.resolve(request);
                     })
                     .jwt(Customizer.withDefaults()));

@@ -50,8 +50,8 @@ class RekomendasiRisikoServiceTest {
     @Test
     void usesClientContextAndReturnsServerContextHash() {
         GenerateAiReqDTO.Context clientContext = new GenerateAiReqDTO.Context(
-                "OPD-001", 2026, null, null, "SAS-001", "Sasaran utama",
-                null, null, null, null, null, "OPD Contoh");
+                null, "OPD-001", 2026, null, null, "SAS-001", "Sasaran utama",
+                null, null, null, null, null, null, null, null, null, "OPD Contoh");
         GenerateAiReqDTO request = new GenerateAiReqDTO(
                 UUID.randomUUID().toString(), "permasalahan", clientContext,
                 Map.of("permasalahan", "", "sebab_permasalahan", ""));

@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
@@ -22,12 +23,17 @@ public record GenerateAiReqDTO(
 ) {
     @JsonIgnoreProperties(ignoreUnknown = false)
     public record Context(
-            @JsonProperty("kode_opd") @NotBlank @Size(max = 128) String kodeOpd,
+            @Pattern(regexp = "(?i)opd|pemda") String scope,
+            @JsonProperty("kode_opd") @Size(max = 128) String kodeOpd,
             @NotNull @Min(1900) @Max(2100) Integer tahun,
             @JsonProperty("kode_tujuan_opd") @Size(max = 128) String kodeTujuanOpd,
             @JsonProperty("tujuan_opd") @Size(max = 2000) String tujuanOpd,
-            @JsonProperty("kode_sasaran_opd") @NotBlank @Size(max = 128) String kodeSasaranOpd,
-            @JsonProperty("sasaran_opd") @NotBlank @Size(max = 2000) String sasaranOpd,
+            @JsonProperty("kode_sasaran_opd") @Size(max = 128) String kodeSasaranOpd,
+            @JsonProperty("sasaran_opd") @Size(max = 2000) String sasaranOpd,
+            @JsonProperty("kode_tujuan_pemda") @Size(max = 128) String kodeTujuanPemda,
+            @JsonProperty("tujuan_pemda") @Size(max = 2000) String tujuanPemda,
+            @JsonProperty("kode_sasaran_pemda") @Size(max = 128) String kodeSasaranPemda,
+            @JsonProperty("sasaran_pemda") @Size(max = 2000) String sasaranPemda,
             @JsonProperty("kode_indikator") @Size(max = 128) String kodeIndikator,
             @Size(max = 2000) String indikator,
             BigDecimal target,

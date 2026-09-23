@@ -24,7 +24,8 @@ class RisikoAiContextServiceTest {
         RisikoAiContextService.ResolvedContext result = service.normalize(input);
 
         assertEquals("OPD-001", result.value().path("kode_opd").asText());
-        assertEquals("Sasaran utama", result.value().path("sasaran_opd").asText());
+        assertEquals("opd", result.value().path("scope").asText());
+        assertEquals("Sasaran utama", result.value().path("sasaran").asText());
         assertNull(result.value().get("indikator").textValue());
         assertEquals(new BigDecimal("1200"), result.value().path("pagu").decimalValue());
         assertEquals(64, result.hash().length());
@@ -59,9 +60,47 @@ class RisikoAiContextServiceTest {
                 () -> objectMapper.readValue(json, GenerateAiReqDTO.Context.class));
     }
 
+    @Test
+    void normalizesPemdaContextWithoutFakeOpdCode() {
+        GenerateAiReqDTO.Context input = pemdaContext("Sasaran Pemda");
+
+        RisikoAiContextService.ResolvedContext result = service.normalize(input);
+
+        assertEquals("pemda", result.value().path("scope").asText());
+        assertEquals("SAS-PEM-001", result.value().path("kode_sasaran").asText());
+        assertEquals("Sasaran Pemda", result.value().path("sasaran").asText());
+        assertNull(result.value().get("kode_opd").textValue());
+    }
+
+    @Test
+    void rejectsMixedOpdAndPemdaContext() {
+        GenerateAiReqDTO.Context mixed = new GenerateAiReqDTO.Context(
+              "pemda", "OPD-001", 2026, null, null, null, null,
+              null, null, "SAS-PEM-001", "Sasaran Pemda",
+              null, null, null, null, null, null);
+
+        assertThrows(AiException.class, () -> service.normalize(mixed));
+    }
+
+    @Test
+    void scopeParticipatesInContextHash() {
+        String opdHash = service.normalize(context("Sasaran utama", null, null)).hash();
+        String pemdaHash = service.normalize(pemdaContext("Sasaran utama")).hash();
+
+        assertNotEquals(opdHash, pemdaHash);
+    }
+
     private GenerateAiReqDTO.Context context(String sasaran, String indikator, BigDecimal pagu) {
         return new GenerateAiReqDTO.Context(
-                " OPD-001 ", 2026, " TUJ-001 ", " Tujuan utama ",
-                " SAS-001 ", sasaran, null, indikator, null, " ", pagu, " OPD Contoh ");
+                null, " OPD-001 ", 2026, " TUJ-001 ", " Tujuan utama ",
+                " SAS-001 ", sasaran, null, null, null, null,
+                null, indikator, null, " ", pagu, " OPD Contoh ");
+    }
+
+    private GenerateAiReqDTO.Context pemdaContext(String sasaran) {
+        return new GenerateAiReqDTO.Context(
+              "pemda", null, 2026, null, null, null, null,
+              "TUJ-PEM-001", "Tujuan Pemda", "SAS-PEM-001", sasaran,
+              null, null, null, null, null, "Pemerintah Daerah");
     }
 }

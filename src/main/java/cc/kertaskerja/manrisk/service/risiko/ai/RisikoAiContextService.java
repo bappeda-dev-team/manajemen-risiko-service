@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -22,21 +23,47 @@ public class RisikoAiContextService {
     public ResolvedContext normalize(GenerateAiReqDTO.Context source) {
         if (source == null) throw contextInvalid();
 
-        String kodeOpd = requiredText(source.kodeOpd(), 128);
-        String kodeSasaran = requiredText(source.kodeSasaranOpd(), 128);
-        String sasaran = requiredText(source.sasaranOpd(), 2000);
+        String scope = source.scope() == null || source.scope().isBlank()
+              ? "opd" : source.scope().trim().toLowerCase(Locale.ROOT);
+        if (!("opd".equals(scope) || "pemda".equals(scope))) throw contextInvalid();
         if (source.tahun() == null || source.tahun() < 1900 || source.tahun() > 2100
               || (source.pagu() != null && source.pagu().signum() < 0)) {
             throw contextInvalid();
         }
 
+        boolean hasOpdContext = hasText(source.kodeOpd()) || hasText(source.kodeTujuanOpd())
+              || hasText(source.tujuanOpd()) || hasText(source.kodeSasaranOpd()) || hasText(source.sasaranOpd());
+        boolean hasPemdaContext = hasText(source.kodeTujuanPemda()) || hasText(source.tujuanPemda())
+              || hasText(source.kodeSasaranPemda()) || hasText(source.sasaranPemda());
+
+        String kodeOpd = null;
+        String kodeTujuan;
+        String tujuan;
+        String kodeSasaran;
+        String sasaran;
+        if ("pemda".equals(scope)) {
+            if (hasOpdContext) throw contextInvalid();
+            kodeTujuan = optionalText(source.kodeTujuanPemda(), 128);
+            tujuan = optionalText(source.tujuanPemda(), 2000);
+            kodeSasaran = requiredText(source.kodeSasaranPemda(), 128);
+            sasaran = requiredText(source.sasaranPemda(), 2000);
+        } else {
+            if (hasPemdaContext) throw contextInvalid();
+            kodeOpd = requiredText(source.kodeOpd(), 128);
+            kodeTujuan = optionalText(source.kodeTujuanOpd(), 128);
+            tujuan = optionalText(source.tujuanOpd(), 2000);
+            kodeSasaran = requiredText(source.kodeSasaranOpd(), 128);
+            sasaran = requiredText(source.sasaranOpd(), 2000);
+        }
+
         ObjectNode context = objectMapper.createObjectNode();
-        context.put("kode_opd", kodeOpd);
+        context.put("scope", scope);
+        putTextOrNull(context, "kode_opd", kodeOpd);
         context.put("tahun", source.tahun());
-        putTextOrNull(context, "kode_tujuan_opd", optionalText(source.kodeTujuanOpd(), 128));
-        putTextOrNull(context, "tujuan_opd", optionalText(source.tujuanOpd(), 2000));
-        context.put("kode_sasaran_opd", kodeSasaran);
-        context.put("sasaran_opd", sasaran);
+        putTextOrNull(context, "kode_tujuan", kodeTujuan);
+        putTextOrNull(context, "tujuan", tujuan);
+        context.put("kode_sasaran", kodeSasaran);
+        context.put("sasaran", sasaran);
         putTextOrNull(context, "kode_indikator", optionalText(source.kodeIndikator(), 128));
         putTextOrNull(context, "indikator", optionalText(source.indikator(), 2000));
         putNumberOrNull(context, "target", source.target());
@@ -70,6 +97,10 @@ public class RisikoAiContextService {
         if (value == null || value.trim().isEmpty()) return null;
         if (value.trim().length() > maxLength) throw contextInvalid();
         return value.trim();
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     private AiException contextInvalid() {

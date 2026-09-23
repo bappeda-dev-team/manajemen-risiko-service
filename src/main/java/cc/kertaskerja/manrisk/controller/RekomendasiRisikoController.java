@@ -24,7 +24,7 @@ public class RekomendasiRisikoController {
     private final RekomendasiRisikoService rekomendasiRisikoService;
 
     @PostMapping("/generate-ai")
-    @Operation(summary = "Buat usulan AI risiko OPD", description = "Hanya untuk trusted server frontend yang memakai token internal.")
+    @Operation(summary = "Buat usulan AI risiko OPD atau Pemda", description = "Hanya untuk trusted server frontend yang memakai token internal.")
     public ResponseEntity<ApiResponse<GenerateAiResDTO>> generateAi(
             @Valid @RequestBody GenerateAiReqDTO request,
             HttpServletRequest servletRequest) {

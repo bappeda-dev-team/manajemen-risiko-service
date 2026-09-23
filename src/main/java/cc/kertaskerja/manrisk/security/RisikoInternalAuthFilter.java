@@ -31,7 +31,8 @@ public class RisikoInternalAuthFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getServletPath();
         return "OPTIONS".equalsIgnoreCase(request.getMethod())
-              || !("/risiko".equals(path) || path.startsWith("/risiko/"));
+              || !("/risiko".equals(path) || path.startsWith("/risiko/")
+              || "/risiko-pemda".equals(path) || path.startsWith("/risiko-pemda/"));
     }
 
     @Override

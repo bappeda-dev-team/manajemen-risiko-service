@@ -1,6 +1,5 @@
 package cc.kertaskerja.manrisk.repository;
 
-import cc.kertaskerja.manrisk.entity.RisikoOpd;
 import cc.kertaskerja.manrisk.entity.RisikoPemda;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -13,6 +12,6 @@ public interface RisikoPemdaRepository extends JpaRepository<RisikoPemda, Long> 
 
     Optional<RisikoPemda> findByKodeRisiko(String kodeRisiko);
 
-    List<RisikoPemda> findByKodeSasaranPemda(String kodeSasaranPemda);
+    List<RisikoPemda> findByKodeSasaranPemdaOrderByIdAsc(String kodeSasaranPemda);
 
 }

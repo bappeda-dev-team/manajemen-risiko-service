@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.service.ai;
+package cc.kertaskerja.manrisk.service.risiko.ai;
 
 import cc.kertaskerja.manrisk.config.RisikoAiProperties;
 import cc.kertaskerja.manrisk.exception.AiException;

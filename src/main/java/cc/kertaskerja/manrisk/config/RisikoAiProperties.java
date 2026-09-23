@@ -6,7 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record RisikoAiProperties(
         boolean enabled,
         OpenRouter openrouter,
-        String internalToken,
         int rateLimitPerMinute,
         int maxConcurrentRequests,
         int connectTimeoutSeconds,
@@ -20,8 +19,7 @@ public record RisikoAiProperties(
                 && openrouter != null
                 && hasText(openrouter.apiKey())
                 && hasText(openrouter.baseUrl())
-                && hasText(openrouter.model())
-                && hasText(internalToken);
+                && hasText(openrouter.model());
     }
 
     private static boolean hasText(String value) {

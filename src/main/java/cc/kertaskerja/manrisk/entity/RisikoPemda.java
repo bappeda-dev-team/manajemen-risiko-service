@@ -17,14 +17,14 @@ public class RisikoPemda extends BaseAuditable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "kode_risiko")
+    @Column(name = "kode_risiko", unique = true)
     private String kodeRisiko;
 
-    @Column(name = "tahun")
+    @Column(name = "tahun", nullable = false)
     private Integer tahun;
 
-    @Column(name = "kode_sasaran_opd")
-    private String kodeSasaranOpd;
+    @Column(name = "kode_sasaran_pemda", nullable = false, length = 128)
+    private String kodeSasaranPemda;
 
     @Column(name = "permasalahan")
     private String permasalahan;
@@ -32,19 +32,19 @@ public class RisikoPemda extends BaseAuditable {
     @Column(name = "sebab_permasalahan")
     private String sebabPermasalahan;
 
-    @Column(name = "pernyataan_risiko")
+    @Column(name = "pernyataan_risiko", nullable = false, columnDefinition = "TEXT")
     private String pernyataanRisiko;
 
-    @Column(name = "skala_kemungkinan")
+    @Column(name = "skala_kemungkinan", nullable = false)
     private Integer skalaKemungkinan;
 
-    @Column(name = "skala_dampak")
+    @Column(name = "skala_dampak", nullable = false)
     private Integer skalaDampak;
 
     @Column(name = "pihak_terkena_risiko")
     private String pihakTerkenaRisiko;
 
-    @Column(name = "rencana_tindak_pengendalian")
+    @Column(name = "rencana_tindak_pengendalian", nullable = false, columnDefinition = "TEXT")
     private String rencanaTindakPengendalian;
 
     @Column(name = "metode_pemantauan")
@@ -71,6 +71,6 @@ public class RisikoPemda extends BaseAuditable {
     @Column(name = "perangkat_yang_menangani")
     private String perangkatYangMenangani;
 
-    @Column(name = "kode_perangkat_yang_menangani")
+    @Column(name = "kode_perangkat_yang_menangani", nullable = false, length = 128)
     private String kodePerangkatYangMenangani;
 }

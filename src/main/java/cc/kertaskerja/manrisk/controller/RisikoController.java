@@ -1,9 +1,9 @@
 package cc.kertaskerja.manrisk.controller;
 
 import cc.kertaskerja.manrisk.dto.ApiResponse;
-import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdReqDTO;
-import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdResDTO;
-import cc.kertaskerja.manrisk.service.RisikoOpdService;
+import cc.kertaskerja.manrisk.dto.Risiko.RisikoReqDTO;
+import cc.kertaskerja.manrisk.dto.Risiko.RisikoResDTO;
+import cc.kertaskerja.manrisk.service.risiko.RisikoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -18,51 +18,51 @@ import java.util.List;
 @RequestMapping("/risiko")
 @RequiredArgsConstructor
 @Tag(name = "Manajemen Risiko")
-public class RisikoOpdController {
+public class RisikoController {
 
-    private final RisikoOpdService risikoOpdService;
+    private final RisikoService risikoService;
 
     @GetMapping
     @Operation(summary = "Ambil semua data risiko")
-    public ResponseEntity<ApiResponse<List<RisikoOpdResDTO>>> getAllRisiko() {
-        List<RisikoOpdResDTO> result = risikoOpdService.getAllRisiko();
+    public ResponseEntity<ApiResponse<List<RisikoResDTO>>> getAllRisiko() {
+        List<RisikoResDTO> result = risikoService.getAllRisiko();
 
         return ResponseEntity.ok(ApiResponse.success(result, "Retrieved " + result.size() + " data risiko successfully"));
     }
 
     @GetMapping("/sasaran/{kodeSasaranOpd}")
     @Operation(summary = "Ambil data risiko berdasarkan kode sasaran")
-    public ResponseEntity<ApiResponse<RisikoOpdResDTO>> getRisikoByKodeSasaranOpd(
+    public ResponseEntity<ApiResponse<RisikoResDTO>> getRisikoByKodeSasaranOpd(
           @PathVariable String kodeSasaranOpd,
           @RequestParam(required = false) String type) {
 
-        RisikoOpdResDTO result = risikoOpdService.getRisikoByKodeSasaranOpd(kodeSasaranOpd, type);
+        RisikoResDTO result = risikoService.getRisikoByKodeSasaranOpd(kodeSasaranOpd, type);
 
         return ResponseEntity.ok(ApiResponse.success(result, ""));
     }
 
     @GetMapping("/{kodeRisiko}")
     @Operation(summary = "Ambil data risiko berdasarkan Kode Risiko")
-    public ResponseEntity<ApiResponse<RisikoOpdResDTO>> getRisikoByKodeRisiko(@PathVariable String kodeRisiko) {
-        RisikoOpdResDTO result = risikoOpdService.getRisikoByKodeRisiko(kodeRisiko);
+    public ResponseEntity<ApiResponse<RisikoResDTO>> getRisikoByKodeRisiko(@PathVariable String kodeRisiko) {
+        RisikoResDTO result = risikoService.getRisikoByKodeRisiko(kodeRisiko);
 
         return ResponseEntity.ok(ApiResponse.success(result, "Retrieved 1 data successfully"));
     }
 
     @PostMapping
     @Operation(summary = "Simpan data risiko baru")
-    public ResponseEntity<ApiResponse<RisikoOpdResDTO>> createRisiko(@Valid @RequestBody RisikoOpdReqDTO reqDTO) {
-        RisikoOpdResDTO created = risikoOpdService.createRisiko(reqDTO);
+    public ResponseEntity<ApiResponse<RisikoResDTO>> createRisiko(@Valid @RequestBody RisikoReqDTO reqDTO) {
+        RisikoResDTO created = risikoService.createRisiko(reqDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(created));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Ubah data risiko berdasarkan ID")
-    public ResponseEntity<ApiResponse<RisikoOpdResDTO>> updateRisiko(
+    public ResponseEntity<ApiResponse<RisikoResDTO>> updateRisiko(
           @PathVariable Long id,
-          @Valid @RequestBody RisikoOpdReqDTO reqDTO) {
-        RisikoOpdResDTO updated = risikoOpdService.updateRisiko(id, reqDTO);
+          @Valid @RequestBody RisikoReqDTO reqDTO) {
+        RisikoResDTO updated = risikoService.updateRisiko(id, reqDTO);
 
         return ResponseEntity.ok(ApiResponse.updated(updated));
     }
@@ -70,7 +70,7 @@ public class RisikoOpdController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Hapus data risiko berdasarkan ID")
     public ResponseEntity<ApiResponse<Void>> deleteRisiko(@PathVariable Long id) {
-        risikoOpdService.deleteRisiko(id);
+        risikoService.deleteRisiko(id);
 
         return ResponseEntity.ok(ApiResponse.deleted());
     }

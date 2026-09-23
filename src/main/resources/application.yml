@@ -46,9 +46,6 @@ spring:
       resolve-lazily: false
 
 kertaskerja:
-  api:
-    penetapan:
-      base-url: ${PENETAPAN_API_URL}
   kode-lembaga: x.xx
   status: MANAJEMEN-RISIKO-UP
   cors:
@@ -70,9 +67,10 @@ server:
 
 # Generate AI is disabled until its server-only variables are supplied manually.
 manrisk:
+  internal:
+    token: ${RISIKO_INTERNAL_TOKEN:}
   ai:
     enabled: ${MANRISK_AI_ENABLED:false}
-    internal-token: ${RISIKO_AI_INTERNAL_TOKEN:}
     rate-limit-per-minute: ${MANRISK_AI_RATE_LIMIT_PER_MINUTE:5}
     max-concurrent-requests: ${MANRISK_AI_MAX_CONCURRENT_REQUESTS:5}
     connect-timeout-seconds: ${MANRISK_AI_CONNECT_TIMEOUT_SECONDS:3}

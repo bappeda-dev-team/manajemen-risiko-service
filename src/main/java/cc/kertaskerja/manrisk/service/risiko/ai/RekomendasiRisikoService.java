@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.service.ai;
+package cc.kertaskerja.manrisk.service.risiko.ai;
 
 import cc.kertaskerja.manrisk.config.RisikoAiProperties;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiReqDTO;
@@ -31,10 +31,7 @@ public class RekomendasiRisikoService {
 
         Instant deadline = Instant.now().plusSeconds(Math.max(1, properties.requestTimeoutSeconds()));
         try (RisikoAiRequestGuard.Permit ignored = requestGuard.acquire(caller, request.requestId())) {
-            RisikoAiContextService.ResolvedContext context = contextService.resolve(request.scope());
-            if (!context.fingerprint().equals(request.contextVersion())) {
-                throw new AiException(409, "AI_CONTEXT_CHANGED", "Konteks sasaran berubah. Muat ulang data sebelum generate.");
-            }
+            RisikoAiContextService.ResolvedContext context = contextService.normalize(request.context());
             Duration remaining = remaining(deadline);
             RisikoAiPromptFactory.Prompt prompt = promptFactory.build(request, context.value());
             JsonNode output = openRouterClient.generate(prompt,
@@ -43,16 +40,15 @@ public class RekomendasiRisikoService {
             // Do not expose JsonNode in an API DTO: non-Jackson serializers render its
             // Java bean metadata instead of the generated JSON payload.
             Object result = objectMapper.convertValue(normalized, Object.class);
-            return new GenerateAiResDTO(request.requestId(), request.type(), context.fingerprint(), result,
+            return new GenerateAiResDTO(request.requestId(), request.type(), context.hash(), result,
                     properties.openrouter().model());
         }
     }
 
     private void validateRequest(GenerateAiReqDTO request) {
-        if (request.requestId().length() > 64 || request.type().length() > 64 || request.contextVersion().length() != 64
-                || request.scope().kodeOpd().length() > 128 || request.scope().kodeSasaran().length() > 128
-                || (request.scope().kodeIndikator() != null && request.scope().kodeIndikator().length() > 128)
-                || request.scope().tahun() < 1900 || request.scope().tahun() > 2100) {
+        if (request == null || request.requestId() == null || request.requestId().isBlank()
+                || request.type() == null || request.type().isBlank() || request.input() == null
+                || request.requestId().length() > 64 || request.type().length() > 64) {
             throw new AiException(400, "AI_INVALID_INPUT", "Input generate AI tidak valid.");
         }
         try { UUID.fromString(request.requestId()); } catch (IllegalArgumentException exception) { throw new AiException(400, "AI_INVALID_INPUT", "Request ID tidak valid."); }

@@ -9,7 +9,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import cc.kertaskerja.manrisk.security.RisikoAiInternalAuthFilter;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
+import cc.kertaskerja.manrisk.security.RisikoInternalAuthFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -22,12 +23,12 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "kertaskerja.security", name = "mode", havingValue = "none")
-    SecurityFilterChain noSecurity(HttpSecurity http, RisikoAiInternalAuthFilter risikoAiInternalAuthFilter) throws Exception {
+    SecurityFilterChain noSecurity(HttpSecurity http, RisikoInternalAuthFilter risikoInternalAuthFilter) throws Exception {
 
         http
               .cors(Customizer.withDefaults())
               .csrf(AbstractHttpConfigurer::disable)
-              .addFilterBefore(risikoAiInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
+              .addFilterBefore(risikoInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
               .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
@@ -35,14 +36,25 @@ public class SecurityConfig {
 
     @Bean
     @ConditionalOnProperty(prefix = "kertaskerja.security", name = "mode", havingValue = "resource-server")
-    SecurityFilterChain resourceServer(HttpSecurity http, RisikoAiInternalAuthFilter risikoAiInternalAuthFilter) throws Exception {
+    SecurityFilterChain resourceServer(HttpSecurity http, RisikoInternalAuthFilter risikoInternalAuthFilter) throws Exception {
+        DefaultBearerTokenResolver bearerTokenResolver = new DefaultBearerTokenResolver();
 
         http
               .cors(Customizer.withDefaults())
               .csrf(AbstractHttpConfigurer::disable)
-              .addFilterBefore(risikoAiInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
-              .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-              .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
+              .addFilterBefore(risikoInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
+              .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/risiko", "/risiko/**", "/risiko-pemda", "/risiko-pemda/**").permitAll()
+                    .anyRequest().authenticated())
+              .oauth2ResourceServer(oauth -> oauth
+                    // /risiko memakai shared internal bearer token, bukan JWT user.
+                    .bearerTokenResolver(request -> {
+                        String path = request.getServletPath();
+                        if ("/risiko".equals(path) || path.startsWith("/risiko/")
+                              || "/risiko-pemda".equals(path) || path.startsWith("/risiko-pemda/")) return null;
+                        return bearerTokenResolver.resolve(request);
+                    })
+                    .jwt(Customizer.withDefaults()));
 
         return http.build();
     }

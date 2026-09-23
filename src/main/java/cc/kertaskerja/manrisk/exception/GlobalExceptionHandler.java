@@ -34,6 +34,14 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
     }
 
+    @ExceptionHandler(RiskException.class)
+    public ResponseEntity<ApiResponse<Object>> handleRiskException(RiskException ex, HttpServletRequest request) {
+        logger.warning("Risk request failed at " + request.getRequestURI() + ": " + ex.getCode());
+        ApiResponse<Object> response = ApiResponse.error(ex.getStatus(),
+              Map.of("code", ex.getCode()), ex.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.valueOf(ex.getStatus()));
+    }
+
     // ========== 400 BAD REQUEST EXCEPTIONS ==========
 
     @ExceptionHandler(BadRequestException.class)
@@ -51,11 +59,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(
+    public ResponseEntity<ApiResponse<Object>> handleValidationException(
           MethodArgumentNotValidException ex, HttpServletRequest request) {
-
-        logger.warning("Validation Exception: " + ex.getMessage());
-
         Map<String, String> validationErrors = new HashMap<>();
         ex.getBindingResult().getAllErrors().forEach(error -> {
             String fieldName = ((FieldError) error).getField();
@@ -63,7 +68,33 @@ public class GlobalExceptionHandler {
             validationErrors.put(fieldName, errorMessage);
         });
 
-        ApiResponse<Map<String, String>> response = ApiResponse.error(
+        if (isAiGenerateRequest(request)) {
+            boolean contextError = validationErrors.keySet().stream().anyMatch(field -> field.startsWith("context"));
+            String code = contextError ? "AI_CONTEXT_INVALID" : "AI_INVALID_INPUT";
+            String message = contextError
+                  ? "Konteks sasaran tidak lengkap atau tidak valid."
+                  : "Input generate AI tidak valid.";
+            logger.warning("AI request validation failed at " + request.getRequestURI() + ": " + code);
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", code, "fields", validationErrors),
+                  message
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        if (isRiskRequest(request)) {
+            logger.warning("Risk request validation failed at " + request.getRequestURI());
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", "RISK_INVALID_INPUT", "fields", validationErrors),
+                  "Input risiko tidak valid."
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+        logger.warning("Validation Exception: " + ex.getMessage());
+        ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.BAD_REQUEST.value(),
               validationErrors,
               "Validation failed"
@@ -100,6 +131,27 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleHttpMessageNotReadableException(
           HttpMessageNotReadableException ex, HttpServletRequest request) {
 
+        if (isAiGenerateRequest(request)) {
+            logger.warning("AI request contains malformed JSON at " + request.getRequestURI());
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", "AI_INVALID_INPUT"),
+                  "Format request AI tidak valid."
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
+
+        if (isRiskRequest(request)) {
+            logger.warning("Risk request contains malformed JSON at " + request.getRequestURI());
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(),
+                  Map.of("code", "RISK_INVALID_INPUT"),
+                  "Format request risiko tidak valid."
+            );
+            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        }
+
         logger.warning("HTTP Message Not Readable Exception: " + ex.getMessage());
 
         ApiResponse<Object> response = ApiResponse.error(
@@ -108,6 +160,14 @@ public class GlobalExceptionHandler {
         );
 
         return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+    }
+
+    private boolean isAiGenerateRequest(HttpServletRequest request) {
+        return request.getRequestURI().endsWith("/risiko/generate-ai");
+    }
+
+    private boolean isRiskRequest(HttpServletRequest request) {
+        return request.getRequestURI().contains("/risiko");
     }
 
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)

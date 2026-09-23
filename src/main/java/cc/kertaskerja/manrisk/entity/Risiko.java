@@ -3,6 +3,10 @@ package cc.kertaskerja.manrisk.entity;
 import cc.kertaskerja.manrisk.common.BaseAuditable;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "risiko")
@@ -11,7 +15,7 @@ import lombok.*;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RisikoOpd extends BaseAuditable {
+public class Risiko extends BaseAuditable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

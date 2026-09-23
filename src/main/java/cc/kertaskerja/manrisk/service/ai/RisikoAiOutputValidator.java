@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.service.risiko.ai;
+package cc.kertaskerja.manrisk.service.ai;
 
 import cc.kertaskerja.manrisk.exception.AiException;
 import com.fasterxml.jackson.databind.JsonNode;

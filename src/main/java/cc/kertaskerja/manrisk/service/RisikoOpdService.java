@@ -1,11 +1,11 @@
-package cc.kertaskerja.manrisk.service.risiko;
+package cc.kertaskerja.manrisk.service;
 
-import cc.kertaskerja.manrisk.dto.Risiko.RisikoReqDTO;
-import cc.kertaskerja.manrisk.dto.Risiko.RisikoResDTO;
-import cc.kertaskerja.manrisk.entity.Risiko;
+import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdReqDTO;
+import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdResDTO;
+import cc.kertaskerja.manrisk.entity.RisikoOpd;
 import cc.kertaskerja.manrisk.exception.ResourceNotFoundException;
-import cc.kertaskerja.manrisk.repository.RisikoRepository;
-import cc.kertaskerja.manrisk.service.risiko.external.ExternalService;
+import cc.kertaskerja.manrisk.repository.RisikoOpdRepository;
+import cc.kertaskerja.manrisk.service.external.ExternalService;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,34 +18,34 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RisikoService {
+public class RisikoOpdService {
 
-    private final RisikoRepository risikoRepository;
+    private final RisikoOpdRepository risikoRepository;
     private final ExternalService externalService;
 
-    public List<RisikoResDTO> getAllRisiko() {
+    public List<RisikoOpdResDTO> getAllRisiko() {
         return risikoRepository.findAll()
               .stream()
               .map(this::toResDTO)
               .collect(Collectors.toList());
     }
 
-    public RisikoResDTO getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
-        List<Risiko> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd);
+    public RisikoOpdResDTO getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
+        List<RisikoOpd> risikoList = risikoRepository.findByKodeSasaranOpd(kodeSasaranOpd);
 
         if (risikoList == null || risikoList.isEmpty()) {
-            return RisikoResDTO.builder()
+            return RisikoOpdResDTO.builder()
                   .kodeSasaranOpd(kodeSasaranOpd)
                   .risiko(List.of())
                   .build();
         }
 
         risikoList = new ArrayList<>(risikoList);
-        risikoList.sort(Comparator.comparing(Risiko::getId));
+        risikoList.sort(Comparator.comparing(RisikoOpd::getId));
 
-        Risiko first = risikoList.get(0);
+        RisikoOpd first = risikoList.get(0);
 
-        return RisikoResDTO.builder()
+        return RisikoOpdResDTO.builder()
               .kodeOpd(first.getKodeOpd())
               .kodeRisiko(first.getKodeRisiko())
               .tahun(first.getTahun())
@@ -56,16 +56,16 @@ public class RisikoService {
               .build();
     }
 
-    public RisikoResDTO getRisikoByKodeRisiko(String kodeRisiko) {
-        Risiko risiko = risikoRepository.findByKodeRisiko(kodeRisiko)
+    public RisikoOpdResDTO getRisikoByKodeRisiko(String kodeRisiko) {
+        RisikoOpd risiko = risikoRepository.findByKodeRisiko(kodeRisiko)
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with kodeRisiko: " + kodeRisiko));
 
         return toResDTO(risiko);
     }
 
     @Transactional
-    public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
-        Risiko risiko = toEntity(reqDTO);
+    public RisikoOpdResDTO createRisiko(RisikoOpdReqDTO reqDTO) {
+        RisikoOpd risiko = toEntity(reqDTO);
 
         String kodeOpd = risiko.getKodeOpd();
         Integer tahun = risiko.getTahun();
@@ -78,15 +78,15 @@ public class RisikoService {
             risiko.setKodeRisiko(generateUniqueKodeRisiko());
 
             // Simpan ke database
-            Risiko saved = risikoRepository.save(risiko);
+            RisikoOpd saved = risikoRepository.save(risiko);
             return toResDTO(saved);
         } else {
             throw new ResourceNotFoundException("Kode Sasaran OPD tidak ditemukan: " + kodeSasaranOpd);
         }
     }
 
-    public RisikoResDTO updateRisiko(Long id, RisikoReqDTO reqDTO) {
-        Risiko existing = risikoRepository.findById(id)
+    public RisikoOpdResDTO updateRisiko(Long id, RisikoOpdReqDTO reqDTO) {
+        RisikoOpd existing = risikoRepository.findById(id)
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
 
         existing.setKodeOpd(reqDTO.getKodeOpd());
@@ -113,7 +113,7 @@ public class RisikoService {
     }
 
     public void deleteRisiko(Long id) {
-        Risiko existing = risikoRepository.findById(id)
+        RisikoOpd existing = risikoRepository.findById(id)
               .orElseThrow(() -> new ResourceNotFoundException("Risiko not found with id: " + id));
         risikoRepository.delete(existing);
     }
@@ -134,9 +134,9 @@ public class RisikoService {
         return kodeRisiko;
     }
 
-    private SasaranData fetchSasaranData(List<Risiko> risikoList, String kodeSasaranOpd) {
+    private SasaranData fetchSasaranData(List<RisikoOpd> risikoList, String kodeSasaranOpd) {
         Set<String> tried = new HashSet<>();
-        for (Risiko risiko : risikoList) {
+        for (RisikoOpd risiko : risikoList) {
             String kodeOpd = risiko.getKodeOpd();
             if (kodeOpd == null || kodeOpd.isBlank()) continue;
 
@@ -179,14 +179,14 @@ public class RisikoService {
         return null;
     }
 
-    private List<RisikoResDTO.Indikator> parseIndikators(JsonNode indikatorsNode) {
+    private List<RisikoOpdResDTO.Indikator> parseIndikators(JsonNode indikatorsNode) {
         if (indikatorsNode == null || !indikatorsNode.isArray()) {
             return null;
         }
 
-        List<RisikoResDTO.Indikator> indikators = new ArrayList<>();
+        List<RisikoOpdResDTO.Indikator> indikators = new ArrayList<>();
         for (JsonNode node : indikatorsNode) {
-            indikators.add(RisikoResDTO.Indikator.builder()
+            indikators.add(RisikoOpdResDTO.Indikator.builder()
                   .id(node.path("id").isNumber() ? node.path("id").asLong() : null)
                   .kodeIndikator(node.path("kode_indikator").asText(null))
                   .indikator(node.path("indikator").asText(null))
@@ -200,14 +200,14 @@ public class RisikoService {
         return indikators;
     }
 
-    private List<RisikoResDTO.Target> parseTargets(JsonNode targetsNode) {
+    private List<RisikoOpdResDTO.Target> parseTargets(JsonNode targetsNode) {
         if (targetsNode == null || !targetsNode.isArray()) {
             return null;
         }
 
-        List<RisikoResDTO.Target> targets = new ArrayList<>();
+        List<RisikoOpdResDTO.Target> targets = new ArrayList<>();
         for (JsonNode node : targetsNode) {
-            targets.add(RisikoResDTO.Target.builder()
+            targets.add(RisikoOpdResDTO.Target.builder()
                   .id(node.path("id").isNumber() ? node.path("id").asLong() : null)
                   .kodeTarget(node.path("kode_target").asText(null))
                   .tahun(node.path("tahun").isNumber() ? node.path("tahun").asInt() : null)
@@ -218,10 +218,10 @@ public class RisikoService {
         return targets;
     }
 
-    private RisikoResDTO.RisikoItem toRisikoItem(Risiko risiko, String type) {
+    private RisikoOpdResDTO.RisikoItem toRisikoItem(RisikoOpd risiko, String type) {
         boolean identifikasi = "identifikasi".equalsIgnoreCase(type);
 
-        RisikoResDTO.RisikoItem.RisikoItemBuilder builder = RisikoResDTO.RisikoItem.builder()
+        RisikoOpdResDTO.RisikoItem.RisikoItemBuilder builder = RisikoOpdResDTO.RisikoItem.builder()
               .type(type)
               .permasalahan(risiko.getPermasalahan())
               .sebabPermasalahan(risiko.getSebabPermasalahan())
@@ -248,10 +248,10 @@ public class RisikoService {
         return builder.build();
     }
 
-    private record SasaranData(String sasaranOpd, String periode, List<RisikoResDTO.Indikator> indikators) {}
+    private record SasaranData(String sasaranOpd, String periode, List<RisikoOpdResDTO.Indikator> indikators) {}
 
-    private RisikoResDTO toResDTO(Risiko risiko) {
-        return RisikoResDTO.builder()
+    private RisikoOpdResDTO toResDTO(RisikoOpd risiko) {
+        return RisikoOpdResDTO.builder()
               .id(risiko.getId())
               .kodeOpd(risiko.getKodeOpd())
               .kodeRisiko(risiko.getKodeRisiko())
@@ -278,8 +278,8 @@ public class RisikoService {
               .build();
     }
 
-    private Risiko toEntity(RisikoReqDTO reqDTO) {
-        return Risiko.builder()
+    private RisikoOpd toEntity(RisikoOpdReqDTO reqDTO) {
+        return RisikoOpd.builder()
               .kodeOpd(reqDTO.getKodeOpd())
               .tahun(reqDTO.getTahun())
               .kodeSasaranOpd(reqDTO.getKodeSasaranOpd())

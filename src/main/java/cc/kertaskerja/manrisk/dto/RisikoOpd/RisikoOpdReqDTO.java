@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.dto.Risiko;
+package cc.kertaskerja.manrisk.dto.RisikoOpd;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class RisikoReqDTO {
+public class RisikoOpdReqDTO {
 
     @JsonProperty("kode_opd")
     private String kodeOpd;

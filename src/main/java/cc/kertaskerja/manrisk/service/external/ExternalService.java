@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.service.risiko.external;
+package cc.kertaskerja.manrisk.service.external;
 
 import cc.kertaskerja.manrisk.config.KertaskerjaProperties;
 import cc.kertaskerja.manrisk.exception.ServiceException;

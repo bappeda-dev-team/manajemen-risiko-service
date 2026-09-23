@@ -1,6 +1,7 @@
 package cc.kertaskerja.manrisk.service.risiko.ai;
 
 import cc.kertaskerja.manrisk.exception.AiException;
+import cc.kertaskerja.manrisk.service.ai.RisikoAiOutputValidator;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;

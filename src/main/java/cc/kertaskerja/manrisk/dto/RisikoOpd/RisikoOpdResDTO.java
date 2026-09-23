@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.dto.Risiko;
+package cc.kertaskerja.manrisk.dto.RisikoOpd;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -15,7 +15,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class RisikoResDTO {
+public class RisikoOpdResDTO {
 
     @JsonProperty("id")
     private Long id;

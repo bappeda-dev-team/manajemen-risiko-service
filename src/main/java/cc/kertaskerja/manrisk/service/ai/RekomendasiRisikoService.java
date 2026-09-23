@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.service.risiko.ai;
+package cc.kertaskerja.manrisk.service.ai;
 
 import cc.kertaskerja.manrisk.config.RisikoAiProperties;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiReqDTO;

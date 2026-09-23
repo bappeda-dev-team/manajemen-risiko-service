@@ -4,7 +4,7 @@ import cc.kertaskerja.manrisk.dto.ApiResponse;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiReqDTO;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiResDTO;
 import cc.kertaskerja.manrisk.security.RisikoAiInternalAuthFilter;
-import cc.kertaskerja.manrisk.service.risiko.ai.RekomendasiRisikoService;
+import cc.kertaskerja.manrisk.service.ai.RekomendasiRisikoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;

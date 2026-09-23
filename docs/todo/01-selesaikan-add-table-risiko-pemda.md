@@ -14,7 +14,7 @@
   OPD, auth, exception, dan AI dari `main` dipertahankan.
 - [x] Draft rename `Risiko` menjadi `RisikoOpd` dibatalkan sehingga kontrak
   OPD existing tidak berubah.
-- [x] Migration V6, entity, repository, DTO mandiri, service CRUD, dan enam
+- [x] Migration V7, entity, repository, DTO mandiri, service CRUD, dan enam
   endpoint `/risiko-pemda` selesai diimplementasikan.
 - [x] Pemda memakai `kode_sasaran_pemda`, tidak mempunyai `kode_opd`, dan
   menghasilkan kode stabil `RSK-PEM-*` dari ID database.
@@ -24,10 +24,12 @@
 - [x] Context AI mendukung discriminator `scope` untuk OPD/Pemda, menolak
   context campuran, dan memasukkan scope ke hash canonical.
 - [x] Focused test CRUD/controller/security/AI/OPD lulus dan `bootJar` berhasil.
-- [ ] Konfirmasi pada seluruh environment bahwa V6 belum pernah tercatat di
-  `flyway_schema_history`. Implementasi saat ini mengoreksi V6 berdasarkan
-  fakta bahwa migration tersebut hanya ada di branch fitur yang belum masuk
-  `main`; bila ternyata pernah dideploy, perubahan harus dipindahkan ke V7.
+- [x] Production terverifikasi baru mencatat V1 dengan checksum `364566838`.
+  V1 dipulihkan ke bentuk immutable yang masih memakai kolom `dampat`, lalu
+  rename `dampat` menjadi `dampak` dipindahkan ke V2 dan migration lama
+  V2–V6 digeser menjadi V3–V7.
+- [ ] Konfirmasi environment persisten lain belum pernah menjalankan urutan
+  lama V2–V6 sebelum sequence baru dideploy.
 - [ ] Jalankan `ManriskApplicationTests.contextLoads()` pada mesin dengan
   Docker aktif. Pada mesin implementasi, 35 dari 36 test lulus dan satu test
   context tersebut gagal karena Testcontainers tidak menemukan Docker.
@@ -74,7 +76,8 @@ Target akhir backend:
 
 ### 2.2 Yang sudah dimulai di `f3baf69`
 
-- [x] Draft migration `V6__create_risiko_pemda_table.sql` sudah ada.
+- [x] Draft migration `V6__create_risiko_pemda_table.sql` sudah ada dan
+      kemudian digeser menjadi V7 saat urutan migration diperbaiki.
 - [x] Draft entity `RisikoPemda` sudah ada.
 - [x] Draft request/response DTO Pemda sudah ada.
 - [x] Draft `RisikoPemdaRepository` sudah ada.
@@ -88,7 +91,7 @@ beberapa draft class saling tidak cocok.
 
 ### 3.1 Migration masih membuat bentuk OPD
 
-`V6__create_risiko_pemda_table.sql` saat ini masih mempunyai:
+Draft awal `V6__create_risiko_pemda_table.sql` masih mempunyai:
 
 ```sql
 kode_opd VARCHAR(255),
@@ -271,14 +274,16 @@ service/risiko/
 
 ## 6. Fase 2 — Benahi migration `risiko_pemda`
 
-### 6.1 Tentukan apakah V6 boleh diedit
+### 6.1 Pulihkan urutan migration yang kompatibel dengan production
 
-- [ ] Periksa tabel `flyway_schema_history` pada seluruh environment.
-- [ ] Bila V6 **belum pernah** dijalankan di environment mana pun, koreksi file
-      V6 sebelum merge.
-- [ ] Bila V6 **sudah pernah** dijalankan, jangan mengubah checksum V6; buat V7
-      untuk rename/drop/add kolom dan constraint yang benar.
-- [ ] Dokumentasikan hasil pemeriksaan dan keputusan V6/V7 di PR.
+- [x] Periksa `flyway_schema_history` production: hanya V1 yang tercatat.
+- [x] Pulihkan isi V1 agar checksum kembali `364566838` dan tidak mengubah
+      migration yang sudah pernah dijalankan.
+- [x] Tambahkan V2 khusus untuk rename kolom `dampat` menjadi `dampak`.
+- [x] Geser migration lama V2–V6 menjadi V3–V7 tanpa mengubah urutan operasi.
+- [ ] Periksa `flyway_schema_history` pada environment persisten lain sebelum
+      deployment; environment yang sudah mencatat V2–V6 lama perlu strategi
+      rekonsiliasi tersendiri.
 
 ### 6.2 Bentuk tabel target
 
@@ -535,7 +540,7 @@ hanya karena tabel baru dibuat.
 ## 14. Urutan implementasi
 
 - [ ] Merge `main` ke `feature/add-table` dan selesaikan regression baseline.
-- [ ] Putuskan V6 versus V7 berdasarkan Flyway history.
+- [x] Pulihkan V1 immutable dan geser migration berikutnya menjadi V2–V7.
 - [ ] Benahi migration dan entity.
 - [ ] Benahi repository dan DTO.
 - [ ] Implementasikan service CRUD lengkap.

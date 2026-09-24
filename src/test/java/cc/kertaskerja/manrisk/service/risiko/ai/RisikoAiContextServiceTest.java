@@ -90,6 +90,33 @@ class RisikoAiContextServiceTest {
         assertNotEquals(opdHash, pemdaHash);
     }
 
+    @Test
+    void normalizesOperasionalContextWithoutPretendingItIsOpdSasaran() {
+        GenerateAiReqDTO.Context input = new GenerateAiReqDTO.Context(
+              "operasional", "OPD-001", 2026, null, null, null, null,
+              null, null, null, null, "IND-PK-001", "Kualitas laporan meningkat",
+              new BigDecimal("90"), "%", new BigDecimal("1000"), "Pegawai Contoh",
+              "PK-2026-001", "Menyusun laporan tepat waktu", "19870001");
+
+        RisikoAiContextService.ResolvedContext result = service.normalize(input);
+
+        assertEquals("operasional", result.value().path("scope").asText());
+        assertEquals("PK-2026-001", result.value().path("kode_rekin").asText());
+        assertEquals("19870001", result.value().path("pegawai_id").asText());
+        assertEquals("PK-2026-001", result.value().path("kode_sasaran").asText());
+        assertEquals("Menyusun laporan tepat waktu", result.value().path("sasaran").asText());
+    }
+
+    @Test
+    void rejectsMixedOperasionalAndOpdSasaranContext() {
+        GenerateAiReqDTO.Context input = new GenerateAiReqDTO.Context(
+              "operasional", "OPD-001", 2026, null, null, "SAS-OPD-001", "Sasaran OPD",
+              null, null, null, null, null, null, null, null, null, "Pegawai Contoh",
+              "PK-2026-001", "Rencana Kinerja", "19870001");
+
+        assertThrows(AiException.class, () -> service.normalize(input));
+    }
+
     private GenerateAiReqDTO.Context context(String sasaran, String indikator, BigDecimal pagu) {
         return new GenerateAiReqDTO.Context(
                 null, " OPD-001 ", 2026, " TUJ-001 ", " Tujuan utama ",

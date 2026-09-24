@@ -23,7 +23,7 @@ public record GenerateAiReqDTO(
 ) {
     @JsonIgnoreProperties(ignoreUnknown = false)
     public record Context(
-            @Pattern(regexp = "(?i)opd|pemda") String scope,
+            @Pattern(regexp = "(?i)opd|pemda|operasional") String scope,
             @JsonProperty("kode_opd") @Size(max = 128) String kodeOpd,
             @NotNull @Min(1900) @Max(2100) Integer tahun,
             @JsonProperty("kode_tujuan_opd") @Size(max = 128) String kodeTujuanOpd,
@@ -39,6 +39,19 @@ public record GenerateAiReqDTO(
             BigDecimal target,
             @Size(max = 100) String satuan,
             @PositiveOrZero BigDecimal pagu,
-            @JsonProperty("pemilik_risiko") @Size(max = 500) String pemilikRisiko
-    ) {}
+            @JsonProperty("pemilik_risiko") @Size(max = 500) String pemilikRisiko,
+            @JsonProperty("kode_rekin") @Size(max = 128) String kodeRekin,
+            @Size(max = 2000) String rekin,
+            @JsonProperty("pegawai_id") @Size(max = 128) String pegawaiId
+    ) {
+        public Context(String scope, String kodeOpd, Integer tahun,
+                       String kodeTujuanOpd, String tujuanOpd, String kodeSasaranOpd, String sasaranOpd,
+                       String kodeTujuanPemda, String tujuanPemda, String kodeSasaranPemda, String sasaranPemda,
+                       String kodeIndikator, String indikator, BigDecimal target, String satuan,
+                       BigDecimal pagu, String pemilikRisiko) {
+            this(scope, kodeOpd, tahun, kodeTujuanOpd, tujuanOpd, kodeSasaranOpd, sasaranOpd,
+                  kodeTujuanPemda, tujuanPemda, kodeSasaranPemda, sasaranPemda, kodeIndikator,
+                  indikator, target, satuan, pagu, pemilikRisiko, null, null, null);
+        }
+    }
 }

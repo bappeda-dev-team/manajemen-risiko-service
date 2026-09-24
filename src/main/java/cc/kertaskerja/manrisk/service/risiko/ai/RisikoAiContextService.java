@@ -25,30 +25,45 @@ public class RisikoAiContextService {
 
         String scope = source.scope() == null || source.scope().isBlank()
               ? "opd" : source.scope().trim().toLowerCase(Locale.ROOT);
-        if (!("opd".equals(scope) || "pemda".equals(scope))) throw contextInvalid();
+        if (!("opd".equals(scope) || "pemda".equals(scope) || "operasional".equals(scope))) throw contextInvalid();
         if (source.tahun() == null || source.tahun() < 1900 || source.tahun() > 2100
               || (source.pagu() != null && source.pagu().signum() < 0)) {
             throw contextInvalid();
         }
 
-        boolean hasOpdContext = hasText(source.kodeOpd()) || hasText(source.kodeTujuanOpd())
+        boolean hasOpdSasaranContext = hasText(source.kodeTujuanOpd())
               || hasText(source.tujuanOpd()) || hasText(source.kodeSasaranOpd()) || hasText(source.sasaranOpd());
         boolean hasPemdaContext = hasText(source.kodeTujuanPemda()) || hasText(source.tujuanPemda())
               || hasText(source.kodeSasaranPemda()) || hasText(source.sasaranPemda());
+        boolean hasOperasionalContext = hasText(source.kodeRekin()) || hasText(source.rekin())
+              || hasText(source.pegawaiId());
 
         String kodeOpd = null;
+        String pegawaiId = null;
+        String kodeRekin = null;
+        String rekin = null;
         String kodeTujuan;
         String tujuan;
         String kodeSasaran;
         String sasaran;
         if ("pemda".equals(scope)) {
-            if (hasOpdContext) throw contextInvalid();
+            if (hasText(source.kodeOpd()) || hasOpdSasaranContext || hasOperasionalContext) throw contextInvalid();
             kodeTujuan = optionalText(source.kodeTujuanPemda(), 128);
             tujuan = optionalText(source.tujuanPemda(), 2000);
             kodeSasaran = requiredText(source.kodeSasaranPemda(), 128);
             sasaran = requiredText(source.sasaranPemda(), 2000);
+        } else if ("operasional".equals(scope)) {
+            if (hasOpdSasaranContext || hasPemdaContext) throw contextInvalid();
+            kodeOpd = requiredText(source.kodeOpd(), 128);
+            pegawaiId = requiredText(source.pegawaiId(), 128);
+            kodeRekin = requiredText(source.kodeRekin(), 128);
+            rekin = requiredText(source.rekin(), 2000);
+            kodeTujuan = null;
+            tujuan = null;
+            kodeSasaran = kodeRekin;
+            sasaran = rekin;
         } else {
-            if (hasPemdaContext) throw contextInvalid();
+            if (hasPemdaContext || hasOperasionalContext) throw contextInvalid();
             kodeOpd = requiredText(source.kodeOpd(), 128);
             kodeTujuan = optionalText(source.kodeTujuanOpd(), 128);
             tujuan = optionalText(source.tujuanOpd(), 2000);
@@ -59,6 +74,9 @@ public class RisikoAiContextService {
         ObjectNode context = objectMapper.createObjectNode();
         context.put("scope", scope);
         putTextOrNull(context, "kode_opd", kodeOpd);
+        putTextOrNull(context, "pegawai_id", pegawaiId);
+        putTextOrNull(context, "kode_rekin", kodeRekin);
+        putTextOrNull(context, "rekin", rekin);
         context.put("tahun", source.tahun());
         putTextOrNull(context, "kode_tujuan", kodeTujuan);
         putTextOrNull(context, "tujuan", tujuan);

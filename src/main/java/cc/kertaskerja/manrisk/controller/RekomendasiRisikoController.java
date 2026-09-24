@@ -24,7 +24,8 @@ public class RekomendasiRisikoController {
     private final RekomendasiRisikoService rekomendasiRisikoService;
 
     @PostMapping("/generate-ai")
-    @Operation(summary = "Buat usulan AI risiko OPD atau Pemda", description = "Hanya untuk trusted server frontend yang memakai token internal.")
+    @Operation(summary = "Buat usulan AI risiko OPD, Pemda, atau Operasional",
+          description = "Memerlukan X-Session-Id yang tervalidasi oleh Auth Service. Token internal hanya fallback transisi untuk BFF lama.")
     public ResponseEntity<ApiResponse<GenerateAiResDTO>> generateAi(
             @Valid @RequestBody GenerateAiReqDTO request,
             HttpServletRequest servletRequest) {

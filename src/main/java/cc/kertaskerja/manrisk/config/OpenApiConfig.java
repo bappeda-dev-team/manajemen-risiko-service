@@ -29,15 +29,14 @@ public class OpenApiConfig {
                           .url("https://manrisk-service.zeabur.app/manrisk/api")
                           .description("Production server")
               ))
-              .addSecurityItem(new SecurityRequirement().addList("basicAuth"))
+              .addSecurityItem(new SecurityRequirement().addList("riskSession"))
               .components(new Components()
-                    .addSecuritySchemes("basicAuth",
+                    .addSecuritySchemes("riskSession",
                           new SecurityScheme()
-                                .type(SecurityScheme.Type.HTTP)
-                                .scheme("basic")
+                                .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
-                                .name("Authorization")
-                                .description("Enter username and password for Swagger UI access")
+                                .name("X-Session-Id")
+                                .description("Masukkan session ID hasil login Auth Service. Token internal hanya fallback sementara untuk BFF lama.")
                     )
               );
     }

@@ -69,6 +69,10 @@ server:
 manrisk:
   internal:
     token: ${RISIKO_INTERNAL_TOKEN:}
+  auth:
+    base-url: ${AUTH_API_URL:}
+    connect-timeout-seconds: ${MANRISK_AUTH_CONNECT_TIMEOUT_SECONDS:3}
+    request-timeout-seconds: ${MANRISK_AUTH_REQUEST_TIMEOUT_SECONDS:3}
   ai:
     enabled: ${MANRISK_AI_ENABLED:false}
     rate-limit-per-minute: ${MANRISK_AI_RATE_LIMIT_PER_MINUTE:5}

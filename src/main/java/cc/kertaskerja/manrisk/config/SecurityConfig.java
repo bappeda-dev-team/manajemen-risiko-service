@@ -45,6 +45,7 @@ public class SecurityConfig {
               .addFilterBefore(risikoInternalAuthFilter, UsernamePasswordAuthenticationFilter.class)
               .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/risiko", "/risiko/**", "/risiko-pemda", "/risiko-pemda/**").permitAll()
+                    .requestMatchers("/risiko-operasional", "/risiko-operasional/**").permitAll()
                     .anyRequest().authenticated())
               .oauth2ResourceServer(oauth -> oauth
                     // /risiko memakai shared internal bearer token, bukan JWT user.
@@ -73,7 +74,7 @@ public class SecurityConfig {
               "PATCH",
               "DELETE",
               "OPTIONS"));
-        config.setAllowedHeaders(List.of("*"));
+        config.setAllowedHeaders(List.of("Content-Type", "X-Session-Id", "Authorization", "X-Manrisk-User-Id"));
         config.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

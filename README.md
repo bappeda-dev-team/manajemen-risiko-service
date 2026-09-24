@@ -91,13 +91,15 @@ Setelah aplikasi berjalan, buka:
 - **Swagger UI** → http://localhost:8080/manrisk/api/swagger-ui.html
 - **OpenAPI JSON** → http://localhost:8080/manrisk/api/v3/api-docs
 
-Swagger UI dilindungi **Basic Auth** — masukkan username & password saat diminta.
+Klik **Authorize** pada Swagger UI lalu masukkan `X-Session-Id` hasil login ke
+Auth Service. Untuk deployment transisi, internal token hanya dipakai oleh BFF
+lama di sisi server dan tidak boleh dimasukkan ke browser.
 
 ---
 
 ## 🔌 Endpoint
 
-Base path: `/manrisk/api/risiko`
+Base path: `/manrisk/api`
 
 | Method   | Endpoint        | Deskripsi                              |
 |----------|-----------------|----------------------------------------|
@@ -106,6 +108,16 @@ Base path: `/manrisk/api/risiko`
 | `POST`   | `/risiko`       | Simpan data risiko baru                |
 | `PUT`    | `/risiko/{id}`  | Ubah data risiko berdasarkan ID        |
 | `DELETE` | `/risiko/{id}`  | Hapus data risiko berdasarkan ID       |
+
+Risiko Operasional memakai endpoint terpisah:
+
+| Method | Endpoint | Deskripsi |
+| --- | --- | --- |
+| `GET` | `/risiko-operasional/rekin/{kodeRekin}?type={type}` | Ambil risiko per rencana kinerja dan tab |
+| `GET` | `/risiko-operasional/{kodeRisiko}` | Detail risiko operasional |
+| `POST` | `/risiko-operasional` | Simpan risiko operasional |
+| `PUT` | `/risiko-operasional/{id}` | Ubah field risiko yang mutable |
+| `DELETE` | `/risiko-operasional/{id}` | Hapus risiko operasional |
 
 ### Contoh: buat risiko baru
 

@@ -13,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -61,6 +62,24 @@ class RisikoServiceTest {
         assertItemIdentity(response.getRisiko().get(0), 2L, "RSK-0002", "analisis");
         assertItemIdentity(response.getRisiko().get(1), 7L, "RSK-0007", "analisis");
         assertNotNull(response.getRisiko().get(0).getSkalaKemungkinan());
+    }
+
+    @Test
+    void exposesExistingControlForEveryTabAndOccurrenceForNonIdentificationTabs() {
+        Risiko record = risiko(2L, "RSK-0002");
+        record.setPengendalianYangSudahAda("SOP layanan tersedia untuk diverifikasi.");
+        record.setRisikoTerjadi(true);
+        record.setWaktuTerjadi(LocalDate.of(2026, 9, 25));
+        when(risikoRepository.findByKodeSasaranOpd(KODE_SASARAN)).thenReturn(List.of(record));
+
+        for (String type : List.of("identifikasi", "analisis", "pengendalian", "pemantauan", "hasil-pemantauan")) {
+            RisikoResDTO.RisikoItem item = risikoService.getRisikoByKodeSasaranOpd(KODE_SASARAN, type).getRisiko().getFirst();
+            assertEquals("SOP layanan tersedia untuk diverifikasi.", item.getPengendalianYangSudahAda());
+            if (!type.equals("identifikasi")) {
+                assertEquals(true, item.getRisikoTerjadi());
+                assertEquals(LocalDate.of(2026, 9, 25), item.getWaktuTerjadi());
+            }
+        }
     }
 
     @Test
@@ -117,6 +136,23 @@ class RisikoServiceTest {
 
         assertEquals(409, error.getStatus());
         assertEquals("RISK_REFERENCE_IMMUTABLE", error.getCode());
+    }
+
+    @Test
+    void updatesExistingControlAndOccurrenceFields() {
+        Risiko existing = risiko(2L, "RSK-0002");
+        when(risikoRepository.findById(2L)).thenReturn(java.util.Optional.of(existing));
+        when(risikoRepository.save(existing)).thenReturn(existing);
+        RisikoReqDTO request = request("OPD-001", 2026, KODE_SASARAN);
+        request.setPengendalianYangSudahAda("  SOP layanan tersedia.  ");
+        request.setRisikoTerjadi(true);
+        request.setWaktuTerjadi(java.time.LocalDate.of(2026, 9, 25));
+
+        RisikoResDTO result = risikoService.updateRisiko(2L, request);
+
+        assertEquals("SOP layanan tersedia.", result.getPengendalianYangSudahAda());
+        assertEquals(true, result.getRisikoTerjadi());
+        assertEquals(java.time.LocalDate.of(2026, 9, 25), result.getWaktuTerjadi());
     }
 
     private void assertItemIdentity(RisikoResDTO.RisikoItem item, Long id, String kodeRisiko, String type) {

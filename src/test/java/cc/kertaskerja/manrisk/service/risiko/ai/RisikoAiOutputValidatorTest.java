@@ -64,4 +64,35 @@ class RisikoAiOutputValidatorTest {
                 normalized.path("proposals").path(0).path("pendekatan").asText());
         assertEquals(36, normalized.path("proposals").path(0).path("id").asText().length());
     }
+
+    @Test
+    void normalizesControlAndRealizationDraftsAndRejectsDuplicates() throws Exception {
+        JsonNode controls = objectMapper.readTree("""
+                {"proposals":[
+                  {"pengendalian_yang_sudah_ada":"Tersedia panduan kerja untuk diverifikasi."},
+                  {"pengendalian_yang_sudah_ada":"Tersedia reviu berkala untuk diverifikasi."},
+                  {"pengendalian_yang_sudah_ada":"Tersedia pencatatan tindak lanjut untuk diverifikasi."}
+                ]}
+                """);
+        JsonNode realization = objectMapper.readTree("""
+                {"proposals":[
+                  {"realisasi_tindak_pengendalian":"Pelaksanaan monitoring dicatat dan perlu diverifikasi."},
+                  {"realisasi_tindak_pengendalian":"Hasil tindak lanjut dirangkum untuk diverifikasi."},
+                  {"realisasi_tindak_pengendalian":"Evaluasi pelaksanaan disiapkan untuk diverifikasi."}
+                ]}
+                """);
+        JsonNode duplicates = objectMapper.readTree("""
+                {"proposals":[
+                  {"pengendalian_yang_sudah_ada":"Kontrol sama"},
+                  {"pengendalian_yang_sudah_ada":"kontrol sama"},
+                  {"pengendalian_yang_sudah_ada":"Kontrol lain"}
+                ]}
+                """);
+
+        assertEquals(3, validator.normalize("pengendalian-yang-sudah-ada", controls).path("proposals").size());
+        assertEquals("Pelaksanaan monitoring dicatat dan perlu diverifikasi.", validator
+              .normalize("realisasi-tindak-pengendalian", realization)
+              .path("proposals").path(0).path("realisasi_tindak_pengendalian").asText());
+        assertThrows(AiException.class, () -> validator.normalize("pengendalian-yang-sudah-ada", duplicates));
+    }
 }

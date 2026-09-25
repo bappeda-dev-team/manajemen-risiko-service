@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
@@ -55,6 +56,24 @@ class RisikoPemdaServiceTest {
     }
 
     @Test
+    void exposesExistingControlForEveryTabAndOccurrenceForNonIdentificationTabs() {
+        RisikoPemda record = risiko(7L, "RSK-PEM-0007");
+        record.setPengendalianYangSudahAda("SOP layanan tersedia untuk diverifikasi.");
+        record.setRisikoTerjadi(true);
+        record.setWaktuTerjadi(LocalDate.of(2026, 9, 25));
+        when(repository.findByKodeSasaranPemdaOrderByIdAsc(KODE_SASARAN)).thenReturn(List.of(record));
+
+        for (String type : List.of("identifikasi", "analisis", "pengendalian", "pemantauan", "hasil-pemantauan")) {
+            RisikoPemdaResDTO.RisikoItem item = service.getRisikoByKodeSasaranPemda(KODE_SASARAN, type).getRisiko().getFirst();
+            assertEquals("SOP layanan tersedia untuk diverifikasi.", item.getPengendalianYangSudahAda());
+            if (!type.equals("identifikasi")) {
+                assertEquals(true, item.getRisikoTerjadi());
+                assertEquals(LocalDate.of(2026, 9, 25), item.getWaktuTerjadi());
+            }
+        }
+    }
+
+    @Test
     void rejectsUnknownTabTypeBeforeQueryingRepository() {
         RiskException error = assertThrows(RiskException.class,
               () -> service.getRisikoByKodeSasaranPemda(KODE_SASARAN, "unknown"));
@@ -89,12 +108,18 @@ class RisikoPemdaServiceTest {
         when(repository.save(existing)).thenReturn(existing);
         RisikoPemdaReqDTO request = request(KODE_SASARAN, 2026);
         request.setPermasalahan("  Masalah baru  ");
+        request.setPengendalianYangSudahAda("  SOP layanan tersedia.  ");
+        request.setRisikoTerjadi(true);
+        request.setWaktuTerjadi(LocalDate.of(2026, 9, 25));
 
         RisikoPemdaResDTO result = service.updateRisiko(2L, request);
 
         assertEquals("Masalah baru", result.getPermasalahan());
         assertEquals(KODE_SASARAN, result.getKodeSasaranPemda());
         assertEquals("RSK-PEM-0002", result.getKodeRisiko());
+        assertEquals("SOP layanan tersedia.", result.getPengendalianYangSudahAda());
+        assertEquals(true, result.getRisikoTerjadi());
+        assertEquals(LocalDate.of(2026, 9, 25), result.getWaktuTerjadi());
     }
 
     @Test

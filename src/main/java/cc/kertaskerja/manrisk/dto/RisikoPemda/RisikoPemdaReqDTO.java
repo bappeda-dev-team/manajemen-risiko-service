@@ -1,16 +1,20 @@
 package cc.kertaskerja.manrisk.dto.RisikoPemda;
 
+import cc.kertaskerja.manrisk.common.validation.CommaSeparatedList;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.time.LocalDate;
 
 @Data
 @NoArgsConstructor
@@ -88,6 +92,19 @@ public class RisikoPemdaReqDTO {
     private String perangkatYangMenangani;
 
     @JsonProperty("kode_perangkat_yang_menangani")
-    @NotBlank @Size(max = 128)
+    @NotBlank
+    @Size(max = 1000)
+    @CommaSeparatedList(maxItems = 5)
     private String kodePerangkatYangMenangani;
+
+    @JsonProperty("pengendalian_yang_sudah_ada")
+    @Size(max = 2000)
+    private String pengendalianYangSudahAda;
+
+    @JsonProperty("risiko_terjadi")
+    private Boolean risikoTerjadi;
+
+    @JsonProperty("waktu_terjadi")
+    @PastOrPresent
+    private LocalDate waktuTerjadi;
 }

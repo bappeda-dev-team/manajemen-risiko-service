@@ -27,6 +27,8 @@ public class RisikoAiOutputValidator {
             case "pernyataan-risiko" -> proposals(raw, 4, "pernyataan_risiko", this::pernyataan);
             case "rtp" -> proposals(raw, 3, "rencana_tindak_pengendalian", this::rtp);
             case "metode-pemantauan" -> proposals(raw, 5, "aktivitas_pemantauan", this::metode);
+            case "pengendalian-yang-sudah-ada" -> proposals(raw, 3, "pengendalian_yang_sudah_ada", this::pengendalianYangSudahAda);
+            case "realisasi-tindak-pengendalian" -> proposals(raw, 3, "realisasi_tindak_pengendalian", this::realisasiTindakPengendalian);
             default -> throw new AiException(400, "AI_TYPE_INVALID", "Tipe generate AI tidak dikenali.");
         };
     }
@@ -66,6 +68,16 @@ public class RisikoAiOutputValidator {
         ObjectNode result = objectMapper.createObjectNode(); result.put("aktivitas_pemantauan", text(raw, "aktivitas_pemantauan", 1500));
         String sifat = text(raw, "sifat", 30); if (!Set.of("Berkala", "Berkelanjutan").contains(sifat)) invalid("nilai sifat tidak dikenali");
         result.put("sifat", sifat); result.put("frekuensi", text(raw, "frekuensi", 100)); return result;
+    }
+    private ObjectNode pengendalianYangSudahAda(JsonNode raw) {
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("pengendalian_yang_sudah_ada", text(raw, "pengendalian_yang_sudah_ada", 1500));
+        return result;
+    }
+    private ObjectNode realisasiTindakPengendalian(JsonNode raw) {
+        ObjectNode result = objectMapper.createObjectNode();
+        result.put("realisasi_tindak_pengendalian", text(raw, "realisasi_tindak_pengendalian", 1500));
+        return result;
     }
     private ArrayNode texts(JsonNode parent, String field) {
         JsonNode raw = parent.path(field);

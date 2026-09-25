@@ -60,6 +60,7 @@ public class RisikoService {
 
     @Transactional
     public RisikoResDTO createRisiko(RisikoReqDTO reqDTO) {
+        RisikoKejadianValidator.validate(reqDTO.getRisikoTerjadi(), reqDTO.getWaktuTerjadi());
         Risiko risiko = toEntity(reqDTO);
         Risiko saved = risikoRepository.saveAndFlush(risiko);
         saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
@@ -77,6 +78,8 @@ public class RisikoService {
                   "Kode OPD, tahun, dan kode sasaran tidak dapat diubah.");
         }
 
+        RisikoKejadianValidator.validate(reqDTO.getRisikoTerjadi(), reqDTO.getWaktuTerjadi());
+
         existing.setPermasalahan(normalized(reqDTO.getPermasalahan()));
         existing.setSebabPermasalahan(normalized(reqDTO.getSebabPermasalahan()));
         existing.setPernyataanRisiko(normalized(reqDTO.getPernyataanRisiko()));
@@ -93,6 +96,9 @@ public class RisikoService {
         existing.setCatatan(normalized(reqDTO.getCatatan()));
         existing.setPerangkatYangMenangani(normalized(reqDTO.getPerangkatYangMenangani()));
         existing.setKodePerangkatYangMenangani(normalized(reqDTO.getKodePerangkatYangMenangani()));
+        existing.setPengendalianYangSudahAda(normalized(reqDTO.getPengendalianYangSudahAda()));
+        existing.setRisikoTerjadi(reqDTO.getRisikoTerjadi());
+        existing.setWaktuTerjadi(reqDTO.getWaktuTerjadi());
 
         return toResDTO(risikoRepository.save(existing));
     }
@@ -116,7 +122,8 @@ public class RisikoService {
               .type(type)
               .permasalahan(risiko.getPermasalahan())
               .sebabPermasalahan(risiko.getSebabPermasalahan())
-              .pernyataanRisiko(risiko.getPernyataanRisiko());
+              .pernyataanRisiko(risiko.getPernyataanRisiko())
+              .pengendalianYangSudahAda(risiko.getPengendalianYangSudahAda());
 
         if (!identifikasi) {
             builder.skalaKemungkinan(risiko.getSkalaKemungkinan())
@@ -132,6 +139,8 @@ public class RisikoService {
                   .catatan(risiko.getCatatan())
                   .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
                   .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
+                  .risikoTerjadi(risiko.getRisikoTerjadi())
+                  .waktuTerjadi(risiko.getWaktuTerjadi())
                   .createdAt(risiko.getCreatedAt())
                   .updatedAt(risiko.getUpdatedAt());
         }
@@ -162,6 +171,9 @@ public class RisikoService {
               .catatan(risiko.getCatatan())
               .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
               .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
+              .pengendalianYangSudahAda(risiko.getPengendalianYangSudahAda())
+              .risikoTerjadi(risiko.getRisikoTerjadi())
+              .waktuTerjadi(risiko.getWaktuTerjadi())
               .createdAt(risiko.getCreatedAt())
               .updatedAt(risiko.getUpdatedAt())
               .build();
@@ -188,6 +200,9 @@ public class RisikoService {
               .catatan(normalized(reqDTO.getCatatan()))
               .perangkatYangMenangani(normalized(reqDTO.getPerangkatYangMenangani()))
               .kodePerangkatYangMenangani(normalized(reqDTO.getKodePerangkatYangMenangani()))
+              .pengendalianYangSudahAda(normalized(reqDTO.getPengendalianYangSudahAda()))
+              .risikoTerjadi(reqDTO.getRisikoTerjadi())
+              .waktuTerjadi(reqDTO.getWaktuTerjadi())
               .build();
     }
 

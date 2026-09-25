@@ -15,7 +15,8 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class RisikoAiPromptFactory {
     private static final Set<String> TYPES = Set.of(
-            "permasalahan", "pernyataan-risiko", "rtp", "dampak", "metode-pemantauan");
+            "permasalahan", "pernyataan-risiko", "rtp", "dampak", "metode-pemantauan",
+            "pengendalian-yang-sudah-ada", "realisasi-tindak-pengendalian");
     private final ObjectMapper objectMapper;
 
     public Prompt build(GenerateAiReqDTO request, JsonNode context) {
@@ -43,6 +44,10 @@ public class RisikoAiPromptFactory {
             case "rtp" -> "Buat tepat tiga usulan rencana tindak pengendalian yang berbeda secara substansi dan langsung menjawab pernyataan risiko. Setiap usulan mempunyai pendekatan serta tindakan preventif, detektif, dan korektif.";
             case "dampak" -> "Buat satu uraian dampak potensial. Jangan menentukan skala atau level risiko.";
             case "metode-pemantauan" -> "Buat tepat lima usulan metode pemantauan atas pelaksanaan dan efektivitas RTP. Gunakan sifat Berkala atau Berkelanjutan.";
+            case "pengendalian-yang-sudah-ada" -> "Buat tepat tiga draft pengendalian yang mungkin sudah tersedia dan relevan terhadap pernyataan risiko. "
+                    + "Tulis sebagai usulan untuk diverifikasi pengguna; jangan mengklaim pengendalian benar-benar tersedia atau telah diterapkan.";
+            case "realisasi-tindak-pengendalian" -> "Buat tepat tiga draft pola pelaporan realisasi yang relevan terhadap RTP. "
+                    + "Setiap draft wajib diverifikasi pengguna dan tidak boleh mengarang bukti pelaksanaan, tanggal, jumlah, lokasi, dokumen, unit, atau hasil.";
             default -> throw new IllegalStateException();
         };
         return new Prompt(system, task + "\nDATA JSON:\n" + serialize(userData), responseSchema(request.type()));
@@ -55,6 +60,8 @@ public class RisikoAiPromptFactory {
             case "rtp" -> Set.of("pernyataan_risiko", "permasalahan", "sebab_permasalahan");
             case "dampak" -> Set.of("pernyataan_risiko", "permasalahan", "sebab_permasalahan", "skala_kemungkinan", "skala_dampak");
             case "metode-pemantauan" -> Set.of("pernyataan_risiko", "rencana_tindak_pengendalian");
+            case "pengendalian-yang-sudah-ada" -> Set.of("pernyataan_risiko");
+            case "realisasi-tindak-pengendalian" -> Set.of("rencana_tindak_pengendalian");
             default -> Set.of();
         };
         if (!allowed.containsAll(input.keySet()) || input.values().stream().anyMatch(value -> value == null || value.trim().length() > 2000)) {
@@ -64,6 +71,8 @@ public class RisikoAiPromptFactory {
             case "pernyataan-risiko" -> Set.of("permasalahan", "sebab_permasalahan");
             case "rtp", "dampak" -> Set.of("pernyataan_risiko");
             case "metode-pemantauan" -> Set.of("pernyataan_risiko", "rencana_tindak_pengendalian");
+            case "pengendalian-yang-sudah-ada" -> Set.of("pernyataan_risiko");
+            case "realisasi-tindak-pengendalian" -> Set.of("rencana_tindak_pengendalian");
             default -> Set.of();
         };
         if (required.stream().anyMatch(field -> input.get(field) == null || input.get(field).isBlank())) {
@@ -105,6 +114,12 @@ public class RisikoAiPromptFactory {
             ObjectNode rtp = properties.putObject("rtp"); rtp.put("type", "object"); rtp.put("additionalProperties", false);
             ObjectNode rtpProperties = rtp.putObject("properties"); stringArray(rtpProperties, "preventif"); stringArray(rtpProperties, "detektif"); stringArray(rtpProperties, "korektif");
             required(rtp, "preventif", "detektif", "korektif"); required(schema, "pendekatan", "rencana_tindak_pengendalian", "rtp");
+        } else if (type.equals("pengendalian-yang-sudah-ada")) {
+            text(properties, "pengendalian_yang_sudah_ada");
+            required(schema, "pengendalian_yang_sudah_ada");
+        } else if (type.equals("realisasi-tindak-pengendalian")) {
+            text(properties, "realisasi_tindak_pengendalian");
+            required(schema, "realisasi_tindak_pengendalian");
         } else {
             text(properties, "aktivitas_pemantauan"); enumText(properties, "sifat", "Berkala", "Berkelanjutan"); text(properties, "frekuensi", 100);
             required(schema, "aktivitas_pemantauan", "sifat", "frekuensi");
@@ -117,7 +132,7 @@ public class RisikoAiPromptFactory {
     private void enumText(ObjectNode properties, String name, String... values) { ObjectNode item = properties.putObject(name); item.put("type", "string"); var allowed = item.putArray("enum"); for (String value : values) allowed.add(value); }
     private void stringArray(ObjectNode properties, String name) { ObjectNode array = properties.putObject(name); array.put("type", "array"); array.put("minItems", 1); array.put("maxItems", 3); ObjectNode item = array.putObject("items"); item.put("type", "string"); item.put("minLength", 1); item.put("maxLength", 500); }
     private void required(ObjectNode object, String... fields) { var required = object.putArray("required"); for (String field : fields) required.add(field); }
-    private int proposalCount(String type) { return switch (type) { case "pernyataan-risiko" -> 4; case "rtp" -> 3; case "metode-pemantauan" -> 5; default -> throw new IllegalArgumentException(); }; }
+    private int proposalCount(String type) { return switch (type) { case "pernyataan-risiko" -> 4; case "rtp", "pengendalian-yang-sudah-ada", "realisasi-tindak-pengendalian" -> 3; case "metode-pemantauan" -> 5; default -> throw new IllegalArgumentException(); }; }
     private String serialize(JsonNode node) { try { return objectMapper.writeValueAsString(node); } catch (Exception exception) { throw new AiException(500, "AI_PROMPT_FAILED", "Prompt AI tidak dapat dibuat.", exception); } }
 
     public record Prompt(String system, String user, JsonNode schema) {}

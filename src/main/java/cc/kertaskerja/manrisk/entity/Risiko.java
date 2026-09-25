@@ -6,6 +6,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -78,6 +79,15 @@ public class Risiko extends BaseAuditable {
     @Column(name = "perangkat_yang_menangani")
     private String perangkatYangMenangani;
 
-    @Column(name = "kode_perangkat_yang_menangani")
+    @Column(name = "kode_perangkat_yang_menangani", columnDefinition = "TEXT")
     private String kodePerangkatYangMenangani;
+
+    @Column(name = "pengendalian_yang_sudah_ada", columnDefinition = "TEXT")
+    private String pengendalianYangSudahAda;
+
+    @Column(name = "risiko_terjadi")
+    private Boolean risikoTerjadi;
+
+    @Column(name = "waktu_terjadi")
+    private LocalDate waktuTerjadi;
 }

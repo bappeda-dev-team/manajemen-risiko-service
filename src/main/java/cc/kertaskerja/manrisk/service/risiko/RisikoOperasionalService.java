@@ -98,7 +98,8 @@ public class RisikoOperasionalService {
               .type(type)
               .permasalahan(risiko.getPermasalahan())
               .sebabPermasalahan(risiko.getSebabPermasalahan())
-              .pernyataanRisiko(risiko.getPernyataanRisiko());
+              .pernyataanRisiko(risiko.getPernyataanRisiko())
+              .pengendalianYangSudahAda(risiko.getPengendalianYangSudahAda());
         if (!"identifikasi".equals(type)) {
             builder.skalaKemungkinan(risiko.getSkalaKemungkinan())
                   .skalaDampak(risiko.getSkalaDampak())
@@ -113,6 +114,8 @@ public class RisikoOperasionalService {
                   .catatan(risiko.getCatatan())
                   .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
                   .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
+                  .risikoTerjadi(risiko.getRisikoTerjadi())
+                  .waktuTerjadi(risiko.getWaktuTerjadi())
                   .createdAt(risiko.getCreatedAt())
                   .updatedAt(risiko.getUpdatedAt());
         }
@@ -144,6 +147,9 @@ public class RisikoOperasionalService {
               .catatan(risiko.getCatatan())
               .perangkatYangMenangani(risiko.getPerangkatYangMenangani())
               .kodePerangkatYangMenangani(risiko.getKodePerangkatYangMenangani())
+              .pengendalianYangSudahAda(risiko.getPengendalianYangSudahAda())
+              .risikoTerjadi(risiko.getRisikoTerjadi())
+              .waktuTerjadi(risiko.getWaktuTerjadi())
               .createdAt(risiko.getCreatedAt())
               .updatedAt(risiko.getUpdatedAt())
               .build();
@@ -161,6 +167,7 @@ public class RisikoOperasionalService {
     }
 
     private void applyMutableFields(RisikoOperasional risiko, RisikoOperasionalReqDTO request) {
+        RisikoKejadianValidator.validate(request.getRisikoTerjadi(), request.getWaktuTerjadi());
         risiko.setPermasalahan(normalized(request.getPermasalahan()));
         risiko.setSebabPermasalahan(normalized(request.getSebabPermasalahan()));
         risiko.setPernyataanRisiko(normalized(request.getPernyataanRisiko()));
@@ -177,6 +184,9 @@ public class RisikoOperasionalService {
         risiko.setCatatan(normalized(request.getCatatan()));
         risiko.setPerangkatYangMenangani(normalized(request.getPerangkatYangMenangani()));
         risiko.setKodePerangkatYangMenangani(normalized(request.getKodePerangkatYangMenangani()));
+        risiko.setPengendalianYangSudahAda(normalized(request.getPengendalianYangSudahAda()));
+        risiko.setRisikoTerjadi(request.getRisikoTerjadi());
+        risiko.setWaktuTerjadi(request.getWaktuTerjadi());
     }
 
     private String normalizedType(String type) {

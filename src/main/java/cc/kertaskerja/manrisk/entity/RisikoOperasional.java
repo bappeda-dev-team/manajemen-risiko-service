@@ -13,6 +13,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "risiko_operasional")
 @Getter
@@ -86,6 +88,15 @@ public class RisikoOperasional extends BaseAuditable {
     @Column(name = "perangkat_yang_menangani", columnDefinition = "TEXT")
     private String perangkatYangMenangani;
 
-    @Column(name = "kode_perangkat_yang_menangani", nullable = false, length = 128)
+    @Column(name = "kode_perangkat_yang_menangani", nullable = false, columnDefinition = "TEXT")
     private String kodePerangkatYangMenangani;
+
+    @Column(name = "pengendalian_yang_sudah_ada", columnDefinition = "TEXT")
+    private String pengendalianYangSudahAda;
+
+    @Column(name = "risiko_terjadi")
+    private Boolean risikoTerjadi;
+
+    @Column(name = "waktu_terjadi")
+    private LocalDate waktuTerjadi;
 }

@@ -4,6 +4,8 @@ import cc.kertaskerja.manrisk.common.BaseAuditable;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "risiko_pemda")
 @Getter
@@ -71,6 +73,15 @@ public class RisikoPemda extends BaseAuditable {
     @Column(name = "perangkat_yang_menangani")
     private String perangkatYangMenangani;
 
-    @Column(name = "kode_perangkat_yang_menangani", nullable = false, length = 128)
+    @Column(name = "kode_perangkat_yang_menangani", nullable = false, columnDefinition = "TEXT")
     private String kodePerangkatYangMenangani;
+
+    @Column(name = "pengendalian_yang_sudah_ada", columnDefinition = "TEXT")
+    private String pengendalianYangSudahAda;
+
+    @Column(name = "risiko_terjadi")
+    private Boolean risikoTerjadi;
+
+    @Column(name = "waktu_terjadi")
+    private LocalDate waktuTerjadi;
 }

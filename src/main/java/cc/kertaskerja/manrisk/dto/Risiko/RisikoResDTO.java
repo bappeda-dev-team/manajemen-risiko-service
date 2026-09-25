@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -91,6 +92,15 @@ public class RisikoResDTO {
 
     @JsonProperty("kode_perangkat_yang_menangani")
     private String kodePerangkatYangMenangani;
+
+    @JsonProperty("pengendalian_yang_sudah_ada")
+    private String pengendalianYangSudahAda;
+
+    @JsonProperty("risiko_terjadi")
+    private Boolean risikoTerjadi;
+
+    @JsonProperty("waktu_terjadi")
+    private LocalDate waktuTerjadi;
 
     @JsonProperty("created_at")
     private LocalDateTime createdAt;
@@ -216,6 +226,15 @@ public class RisikoResDTO {
 
         @JsonProperty("kode_perangkat_yang_menangani")
         private String kodePerangkatYangMenangani;
+
+        @JsonProperty("pengendalian_yang_sudah_ada")
+        private String pengendalianYangSudahAda;
+
+        @JsonProperty("risiko_terjadi")
+        private Boolean risikoTerjadi;
+
+        @JsonProperty("waktu_terjadi")
+        private LocalDate waktuTerjadi;
 
         @JsonProperty("created_at")
         private LocalDateTime createdAt;

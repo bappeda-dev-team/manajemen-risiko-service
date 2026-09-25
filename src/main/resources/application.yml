@@ -67,8 +67,6 @@ server:
 
 # Generate AI is disabled until its server-only variables are supplied manually.
 manrisk:
-  internal:
-    token: ${RISIKO_INTERNAL_TOKEN:}
   auth:
     base-url: ${AUTH_API_URL:}
     connect-timeout-seconds: ${MANRISK_AUTH_CONNECT_TIMEOUT_SECONDS:3}

@@ -36,7 +36,7 @@ public class OpenApiConfig {
                                 .type(SecurityScheme.Type.APIKEY)
                                 .in(SecurityScheme.In.HEADER)
                                 .name("X-Session-Id")
-                                .description("Masukkan session ID hasil login Auth Service. Token internal hanya fallback sementara untuk BFF lama.")
+                                .description("Masukkan session ID aktif hasil login Auth Service.")
                     )
               );
     }

@@ -38,10 +38,11 @@ public class OpenRouterClient {
 
         try {
             String body = objectMapper.writeValueAsString(payload);
-            log.info("OpenRouter request: endpoint={}, model={}, apiKeyConfigured={}, timeoutSeconds={}",
+            log.info("OpenRouter request: endpoint={}, model={}, templateId={}, templateVersion={}, timeoutSeconds={}",
                     uri,
                     properties.openrouter().model(),
-                    hasText(properties.openrouter().apiKey()),
+                    prompt.templateId(),
+                    prompt.templateVersion(),
                     timeout.toSeconds());
             HttpRequest request = HttpRequest.newBuilder(uri)
                     .header("Authorization", "Bearer " + properties.openrouter().apiKey())
@@ -63,11 +64,11 @@ public class OpenRouterClient {
                 throw new AiException(502, "AI_INVALID_OUTPUT", "Respons AI terlalu besar.");
             }
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                log.warn("OpenRouter rejected request: endpoint={}, model={}, status={}, providerError={}",
+                log.warn("OpenRouter rejected request: endpoint={}, model={}, status={}, responseBytes={}",
                         uri,
                         properties.openrouter().model(),
                         response.statusCode(),
-                        providerError(response.body()));
+                        response.body() == null ? 0 : response.body().length());
                 if (response.statusCode() == 401 || response.statusCode() == 402 || response.statusCode() == 403 || response.statusCode() == 429) {
                     throw new AiException(503, "AI_PROVIDER_UNAVAILABLE", "Layanan AI belum tersedia.");
                 }
@@ -90,34 +91,9 @@ public class OpenRouterClient {
             log.error("OpenRouter request failed: endpoint={}, model={}, cause={}",
                     uri,
                     properties.openrouter().model(),
-                    exception.getClass().getSimpleName(),
-                    exception);
+                    exception.getClass().getSimpleName());
             throw new AiException(502, "AI_PROVIDER_ERROR", "Layanan AI mengalami gangguan.", exception);
         }
-    }
-
-    private String providerError(String responseBody) {
-        if (responseBody == null || responseBody.isBlank()) return "empty response";
-        try {
-            JsonNode error = objectMapper.readTree(responseBody).path("error");
-            String code = cleanLogValue(error.path("code").asText("unknown"));
-            String message = cleanLogValue(error.path("message").asText("no provider message"));
-            return "code=" + code + ", message=" + truncate(message, 500);
-        } catch (Exception ignored) {
-            return "non-JSON response";
-        }
-    }
-
-    private boolean hasText(String value) {
-        return value != null && !value.isBlank();
-    }
-
-    private String cleanLogValue(String value) {
-        return value.replace('\n', ' ').replace('\r', ' ');
-    }
-
-    private String truncate(String value, int maxLength) {
-        return value.length() <= maxLength ? value : value.substring(0, maxLength) + "…";
     }
 
     private URI chatCompletionsUri() {

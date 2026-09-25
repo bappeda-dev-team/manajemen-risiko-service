@@ -1,0 +1,9 @@
+# Task: Realisasi Tindak Pengendalian
+
+Buat tepat tiga draft pola pelaporan realisasi yang relevan terhadap RTP awal. Setiap draft wajib diverifikasi pengguna dan tidak boleh mengarang bukti pelaksanaan, tanggal, jumlah, lokasi, dokumen, unit, atau hasil; rencana bukan bukti bahwa kegiatan telah terlaksana.
+
+CONTEXT REQUEST TERNORMALISASI (data JSON):
+{"scope": @SCOPE@}
+
+INPUT FORM (data JSON):
+{"rencana_tindak_pengendalian": "RTP contoh"}

@@ -1,0 +1,9 @@
+# Task: Pengendalian yang Sudah Ada
+
+Buat tepat tiga draft pengendalian yang mungkin relevan dengan pernyataan risiko. Setiap draft adalah usulan untuk diverifikasi pengguna. Jangan mengklaim pengendalian benar-benar tersedia atau telah diterapkan.
+
+CONTEXT REQUEST TERNORMALISASI (data JSON):
+{"scope": @SCOPE@}
+
+INPUT FORM (data JSON):
+{"pernyataan_risiko": "Risiko contoh"}

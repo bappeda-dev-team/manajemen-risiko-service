@@ -59,7 +59,7 @@ class RekomendasiRisikoServiceTest {
         RisikoAiContextService.ResolvedContext resolved =
                 new RisikoAiContextService.ResolvedContext(canonicalContext, "a".repeat(64));
         RisikoAiPromptFactory.Prompt prompt =
-                new RisikoAiPromptFactory.Prompt("system", "user", objectMapper.createObjectNode());
+                new RisikoAiPromptFactory.Prompt("risiko/permasalahan", "v1", "system", "user", objectMapper.createObjectNode());
         ObjectNode providerOutput = objectMapper.createObjectNode().put("permasalahan", "Masalah");
 
         when(contextService.normalize(clientContext)).thenReturn(resolved);

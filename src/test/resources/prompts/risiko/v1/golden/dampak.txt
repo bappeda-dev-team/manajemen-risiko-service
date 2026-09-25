@@ -1,0 +1,9 @@
+# Task: Dampak
+
+Buat satu uraian dampak potensial yang berkaitan dengan pernyataan risiko. Sasaran dan indikator hanya dipakai bila relevan. Skala adalah data pendukung; jangan menentukan atau mengubah skala maupun level risiko. Jangan mengarang nominal kerugian.
+
+CONTEXT REQUEST TERNORMALISASI (data JSON):
+{"scope": @SCOPE@, "sasaran": @SASARAN@, "indikator": "Indikator contoh"}
+
+INPUT FORM (data JSON):
+{"pernyataan_risiko": "Risiko contoh", "permasalahan": "Masalah contoh", "sebab_permasalahan": "Sebab contoh", "skala_kemungkinan": "4", "skala_dampak": "3"}

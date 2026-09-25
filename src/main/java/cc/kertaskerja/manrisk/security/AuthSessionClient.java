@@ -3,7 +3,7 @@ package cc.kertaskerja.manrisk.security;
 import cc.kertaskerja.manrisk.config.AuthServiceProperties;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -16,12 +16,25 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 public class AuthSessionClient implements RisikoSessionValidator {
     public static final String SESSION_HEADER = "X-Session-Id";
 
     private final AuthServiceProperties properties;
     private final ObjectMapper objectMapper;
+    private final HttpClient client;
+
+    @Autowired
+    public AuthSessionClient(AuthServiceProperties properties, ObjectMapper objectMapper) {
+        this(properties, objectMapper, HttpClient.newBuilder()
+              .connectTimeout(Duration.ofSeconds(timeout(properties.connectTimeoutSeconds())))
+              .build());
+    }
+
+    AuthSessionClient(AuthServiceProperties properties, ObjectMapper objectMapper, HttpClient client) {
+        this.properties = properties;
+        this.objectMapper = objectMapper;
+        this.client = client;
+    }
 
     @Override
     public RisikoAuthenticatedUser validate(String sessionId) {
@@ -30,9 +43,6 @@ public class AuthSessionClient implements RisikoSessionValidator {
         }
 
         try {
-            HttpClient client = HttpClient.newBuilder()
-                  .connectTimeout(Duration.ofSeconds(timeout(properties.connectTimeoutSeconds())))
-                  .build();
             HttpRequest request = HttpRequest.newBuilder(userInfoUri())
                   .timeout(Duration.ofSeconds(timeout(properties.requestTimeoutSeconds())))
                   .header(SESSION_HEADER, sessionId)

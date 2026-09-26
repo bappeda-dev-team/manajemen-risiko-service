@@ -16,26 +16,50 @@ public class ApiResponse<T> {
     private T data;
 
     public static <T> ApiResponse<T> success(T data, String message) {
-        return new ApiResponse<>(200, message, data);
+        return new ApiResponse<>(
+                200,
+                message,
+                data
+        );
     }
 
     public static <T> ApiResponse<T> created(T data) {
-        return new ApiResponse<>(201, "Created successfully", data);
+        return new ApiResponse<>(
+                201,
+                "Created successfully",
+                data
+        );
     }
 
     public static <T> ApiResponse<T> updated(T data) {
-        return new ApiResponse<>(200, "Updated successfully", data);
+        return new ApiResponse<>(
+                200,
+                "Updated successfully",
+                data
+        );
     }
 
     public static <T> ApiResponse<T> deleted() {
-        return new ApiResponse<>(200, "Deleted successfully", null);
+        return new ApiResponse<>(
+                200,
+                "Deleted successfully",
+                null
+        );
     }
 
     public static <T> ApiResponse<T> error(int status, String message) {
-        return new ApiResponse<>(status, message, null);
+        return new ApiResponse<>(
+                status,
+                message,
+                null
+        );
     }
 
     public static <T> ApiResponse<T> error(int status, T data, String message) {
-        return new ApiResponse<>(status, message, data);
+        return new ApiResponse<>(
+                status,
+                message,
+                data
+        );
     }
 }

@@ -1,6 +1,6 @@
 # Task: Rencana Tindak Pengendalian
 
-Buat tepat tiga pendekatan yang berbeda secara substansi dan langsung menjawab pernyataan risiko. Setiap usulan memuat `pendekatan`, `rencana_tindak_pengendalian`, serta tindakan `preventif`, `detektif`, dan `korektif`. Jangan mengarang pejabat, anggaran, atau status realisasi.
+Buat tepat empat pendekatan yang berbeda secara substansi dan langsung menjawab pernyataan risiko. Setiap usulan memuat `pendekatan`, `rencana_tindak_pengendalian`, serta tindakan `preventif`, `detektif`, dan `korektif`. Jangan mengarang pejabat, anggaran, atau status realisasi.
 
 CONTEXT REQUEST TERNORMALISASI (data JSON):
 {"scope": {{context.scope}}}

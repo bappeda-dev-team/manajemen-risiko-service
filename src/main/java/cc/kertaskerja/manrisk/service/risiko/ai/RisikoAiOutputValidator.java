@@ -17,6 +17,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Slf4j
 public class RisikoAiOutputValidator {
+    private static final int PROPOSAL_COUNT = 4;
+
     private final ObjectMapper objectMapper;
 
     public JsonNode normalize(String type, JsonNode raw) {
@@ -24,11 +26,11 @@ public class RisikoAiOutputValidator {
         return switch (type) {
             case "permasalahan" -> pair(raw, "permasalahan", "sebab_permasalahan");
             case "dampak" -> single(raw, "dampak");
-            case "pernyataan-risiko" -> proposals(raw, 4, "pernyataan_risiko", this::pernyataan);
-            case "rtp" -> proposals(raw, 3, "rencana_tindak_pengendalian", this::rtp);
-            case "metode-pemantauan" -> proposals(raw, 5, "aktivitas_pemantauan", this::metode);
-            case "pengendalian-yang-sudah-ada" -> proposals(raw, 3, "pengendalian_yang_sudah_ada", this::pengendalianYangSudahAda);
-            case "realisasi-tindak-pengendalian" -> proposals(raw, 3, "realisasi_tindak_pengendalian", this::realisasiTindakPengendalian);
+            case "pernyataan-risiko" -> proposals(raw, PROPOSAL_COUNT, "pernyataan_risiko", this::pernyataan);
+            case "rtp" -> proposals(raw, PROPOSAL_COUNT, "rencana_tindak_pengendalian", this::rtp);
+            case "metode-pemantauan" -> proposals(raw, PROPOSAL_COUNT, "aktivitas_pemantauan", this::metode);
+            case "pengendalian-yang-sudah-ada" -> proposals(raw, PROPOSAL_COUNT, "pengendalian_yang_sudah_ada", this::pengendalianYangSudahAda);
+            case "realisasi-tindak-pengendalian" -> proposals(raw, PROPOSAL_COUNT, "realisasi_tindak_pengendalian", this::realisasiTindakPengendalian);
             default -> throw new AiException(400, "AI_TYPE_INVALID", "Tipe generate AI tidak dikenali.");
         };
     }

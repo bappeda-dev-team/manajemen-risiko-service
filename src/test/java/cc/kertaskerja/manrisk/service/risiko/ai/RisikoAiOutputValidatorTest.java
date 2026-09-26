@@ -40,8 +40,7 @@ class RisikoAiOutputValidatorTest {
                   {"aktivitas_pemantauan":"A","sifat":"Harian","frekuensi":"Bulanan"},
                   {"aktivitas_pemantauan":"B","sifat":"Harian","frekuensi":"Bulanan"},
                   {"aktivitas_pemantauan":"C","sifat":"Harian","frekuensi":"Bulanan"},
-                  {"aktivitas_pemantauan":"D","sifat":"Harian","frekuensi":"Bulanan"},
-                  {"aktivitas_pemantauan":"E","sifat":"Harian","frekuensi":"Bulanan"}
+                  {"aktivitas_pemantauan":"D","sifat":"Harian","frekuensi":"Bulanan"}
                 ]}
                 """);
         assertThrows(AiException.class, () -> validator.normalize("metode-pemantauan", invalidNature));
@@ -53,13 +52,14 @@ class RisikoAiOutputValidatorTest {
                 {"proposals":[
                   {"pendekatan":"Penguatan kapasitas dan standardisasi proses pengelolaan data kinerja lintas unit secara terukur dan berkelanjutan","rencana_tindak_pengendalian":"Menyusun standar kerja dan meningkatkan kapasitas pengelola data.","rtp":{"preventif":["Menyusun SOP pengelolaan data"],"detektif":["Melakukan reviu kualitas data berkala"],"korektif":["Memperbaiki data yang tidak sesuai"]}},
                   {"pendekatan":"Integrasi sistem dan validasi data","rencana_tindak_pengendalian":"Membangun validasi dan integrasi pada alur pelaporan.","rtp":{"preventif":["Menetapkan aturan validasi"],"detektif":["Membuat laporan anomali"],"korektif":["Menindaklanjuti anomali data"]}},
-                  {"pendekatan":"Pengawasan dan evaluasi berjenjang","rencana_tindak_pengendalian":"Menjalankan evaluasi berjenjang atas ketepatan pelaporan.","rtp":{"preventif":["Menetapkan jadwal evaluasi"],"detektif":["Memeriksa ketepatan laporan"],"korektif":["Memberikan pendampingan perbaikan"]}}
+                  {"pendekatan":"Pengawasan dan evaluasi berjenjang","rencana_tindak_pengendalian":"Menjalankan evaluasi berjenjang atas ketepatan pelaporan.","rtp":{"preventif":["Menetapkan jadwal evaluasi"],"detektif":["Memeriksa ketepatan laporan"],"korektif":["Memberikan pendampingan perbaikan"]}},
+                  {"pendekatan":"Penguatan koordinasi lintas unit","rencana_tindak_pengendalian":"Menetapkan forum koordinasi untuk memastikan ketepatan pelaporan.","rtp":{"preventif":["Menetapkan mekanisme koordinasi"],"detektif":["Memantau tindak lanjut koordinasi"],"korektif":["Menyelesaikan hambatan lintas unit"]}}
                 ]}
                 """);
 
         JsonNode normalized = validator.normalize("rtp", raw);
 
-        assertEquals(3, normalized.path("proposals").size());
+        assertEquals(4, normalized.path("proposals").size());
         assertEquals("Penguatan kapasitas dan standardisasi proses pengelolaan data kinerja lintas unit secara terukur dan berkelanjutan",
                 normalized.path("proposals").path(0).path("pendekatan").asText());
         assertEquals(36, normalized.path("proposals").path(0).path("id").asText().length());
@@ -71,25 +71,28 @@ class RisikoAiOutputValidatorTest {
                 {"proposals":[
                   {"pengendalian_yang_sudah_ada":"Tersedia panduan kerja untuk diverifikasi."},
                   {"pengendalian_yang_sudah_ada":"Tersedia reviu berkala untuk diverifikasi."},
-                  {"pengendalian_yang_sudah_ada":"Tersedia pencatatan tindak lanjut untuk diverifikasi."}
+                  {"pengendalian_yang_sudah_ada":"Tersedia pencatatan tindak lanjut untuk diverifikasi."},
+                  {"pengendalian_yang_sudah_ada":"Tersedia validasi berjenjang untuk diverifikasi."}
                 ]}
                 """);
         JsonNode realization = objectMapper.readTree("""
                 {"proposals":[
                   {"realisasi_tindak_pengendalian":"Pelaksanaan monitoring dicatat dan perlu diverifikasi."},
                   {"realisasi_tindak_pengendalian":"Hasil tindak lanjut dirangkum untuk diverifikasi."},
-                  {"realisasi_tindak_pengendalian":"Evaluasi pelaksanaan disiapkan untuk diverifikasi."}
+                  {"realisasi_tindak_pengendalian":"Evaluasi pelaksanaan disiapkan untuk diverifikasi."},
+                  {"realisasi_tindak_pengendalian":"Dokumentasi koordinasi disiapkan untuk diverifikasi."}
                 ]}
                 """);
         JsonNode duplicates = objectMapper.readTree("""
                 {"proposals":[
                   {"pengendalian_yang_sudah_ada":"Kontrol sama"},
                   {"pengendalian_yang_sudah_ada":"kontrol sama"},
-                  {"pengendalian_yang_sudah_ada":"Kontrol lain"}
+                  {"pengendalian_yang_sudah_ada":"Kontrol lain"},
+                  {"pengendalian_yang_sudah_ada":"Kontrol tambahan"}
                 ]}
                 """);
 
-        assertEquals(3, validator.normalize("pengendalian-yang-sudah-ada", controls).path("proposals").size());
+        assertEquals(4, validator.normalize("pengendalian-yang-sudah-ada", controls).path("proposals").size());
         assertEquals("Pelaksanaan monitoring dicatat dan perlu diverifikasi.", validator
               .normalize("realisasi-tindak-pengendalian", realization)
               .path("proposals").path(0).path("realisasi_tindak_pengendalian").asText());

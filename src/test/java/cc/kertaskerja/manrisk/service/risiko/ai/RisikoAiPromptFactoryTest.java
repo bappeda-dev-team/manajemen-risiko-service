@@ -42,9 +42,9 @@ class RisikoAiPromptFactoryTest {
         RisikoAiPromptFactory.Prompt realization = factory.build(request("realisasi-tindak-pengendalian",
               Map.of("rencana_tindak_pengendalian", "Melakukan monitoring")), context);
 
-        assertEquals(3, control.schema().path("properties").path("proposals").path("minItems").asInt());
+        assertEquals(4, control.schema().path("properties").path("proposals").path("minItems").asInt());
         assertTrue(control.user().contains("diverifikasi pengguna"));
-        assertEquals(3, realization.schema().path("properties").path("proposals").path("maxItems").asInt());
+        assertEquals(4, realization.schema().path("properties").path("proposals").path("maxItems").asInt());
         assertTrue(realization.user().contains("tidak boleh mengarang bukti pelaksanaan"));
     }
 
@@ -71,10 +71,10 @@ class RisikoAiPromptFactoryTest {
         assertEquals("object", factory.build(request("dampak", Map.of("pernyataan_risiko", "Risiko")), context)
               .schema().path("type").asText());
         assertProposalCount(factory, context, "pernyataan-risiko", Map.of("permasalahan", "Masalah", "sebab_permasalahan", "Sebab"), 4);
-        assertProposalCount(factory, context, "rtp", Map.of("pernyataan_risiko", "Risiko"), 3);
-        assertProposalCount(factory, context, "metode-pemantauan", Map.of("pernyataan_risiko", "Risiko", "rencana_tindak_pengendalian", "RTP"), 5);
-        assertProposalCount(factory, context, "pengendalian-yang-sudah-ada", Map.of("pernyataan_risiko", "Risiko"), 3);
-        assertProposalCount(factory, context, "realisasi-tindak-pengendalian", Map.of("rencana_tindak_pengendalian", "RTP"), 3);
+        assertProposalCount(factory, context, "rtp", Map.of("pernyataan_risiko", "Risiko"), 4);
+        assertProposalCount(factory, context, "metode-pemantauan", Map.of("pernyataan_risiko", "Risiko", "rencana_tindak_pengendalian", "RTP"), 4);
+        assertProposalCount(factory, context, "pengendalian-yang-sudah-ada", Map.of("pernyataan_risiko", "Risiko"), 4);
+        assertProposalCount(factory, context, "realisasi-tindak-pengendalian", Map.of("rencana_tindak_pengendalian", "RTP"), 4);
 
         AiException missing = assertThrows(AiException.class,
               () -> factory.build(request("pernyataan-risiko", Map.of("permasalahan", "Masalah")), context));

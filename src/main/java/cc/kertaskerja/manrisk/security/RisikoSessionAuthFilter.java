@@ -27,6 +27,7 @@ public class RisikoSessionAuthFilter extends OncePerRequestFilter {
         String path = request.getServletPath();
         return "OPTIONS".equalsIgnoreCase(request.getMethod())
               || !("/risiko".equals(path) || path.startsWith("/risiko/")
+              || "/risiko-opd".equals(path) || path.startsWith("/risiko-opd/")
               || "/risiko-pemda".equals(path) || path.startsWith("/risiko-pemda/")
               || "/risiko-operasional".equals(path) || path.startsWith("/risiko-operasional/"));
     }

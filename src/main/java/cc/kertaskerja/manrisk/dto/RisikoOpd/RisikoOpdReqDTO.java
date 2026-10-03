@@ -1,4 +1,4 @@
-package cc.kertaskerja.manrisk.dto.Risiko;
+package cc.kertaskerja.manrisk.dto.RisikoOpd;
 
 import cc.kertaskerja.manrisk.common.validation.CommaSeparatedList;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -21,7 +21,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 @JsonIgnoreProperties(ignoreUnknown = false)
-public class RisikoReqDTO {
+public class RisikoOpdReqDTO {
 
     @JsonProperty("kode_opd")
     @NotBlank @Size(max = 128)

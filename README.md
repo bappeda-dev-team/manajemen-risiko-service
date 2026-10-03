@@ -101,13 +101,19 @@ lama di sisi server dan tidak boleh dimasukkan ke browser.
 
 Base path: `/manrisk/api`
 
-| Method   | Endpoint        | Deskripsi                              |
-|----------|-----------------|----------------------------------------|
-| `GET`    | `/risiko`       | Ambil semua data risiko                |
-| `GET`    | `/risiko/{id}`  | Ambil data risiko berdasarkan ID       |
-| `POST`   | `/risiko`       | Simpan data risiko baru                |
-| `PUT`    | `/risiko/{id}`  | Ubah data risiko berdasarkan ID        |
-| `DELETE` | `/risiko/{id}`  | Hapus data risiko berdasarkan ID       |
+| Method | Endpoint | Deskripsi |
+| --- | --- | --- |
+| `GET` | `/risiko-opd` | Ambil semua Risiko OPD |
+| `GET` | `/risiko-opd/sasaran/{kodeSasaranOpd}?type={type}` | Ambil Risiko OPD per sasaran dan tab |
+| `GET` | `/risiko-opd/{kodeRisiko}` | Ambil detail Risiko OPD |
+| `POST` | `/risiko-opd` | Simpan Risiko OPD baru |
+| `PUT` | `/risiko-opd/{id}` | Ubah Risiko OPD berdasarkan ID |
+| `DELETE` | `/risiko-opd/{id}` | Hapus Risiko OPD berdasarkan ID |
+
+CRUD Risiko OPD hanya tersedia melalui `/risiko-opd/**`. Untuk membantu bookmark
+lama bermigrasi, endpoint detail canonical sementara masih menerima kode
+`RSK-####` dan selalu mengembalikan kode canonical `RSK-OPD-####`. Endpoint
+shared AI tetap berada di `POST /risiko/generate-ai`.
 
 Risiko Operasional memakai endpoint terpisah:
 
@@ -122,17 +128,22 @@ Risiko Operasional memakai endpoint terpisah:
 ### Contoh: buat risiko baru
 
 ```bash
-curl -X POST http://localhost:8080/manrisk/api/risiko \
+curl -X POST http://localhost:8080/manrisk/api/risiko-opd \
   -H "Content-Type: application/json" \
   -d '{
-    "kodeOpd": "1.01.01",
-    "kodeRisiko": "RSK-001",
+    "kode_opd": "1.01.01",
     "tahun": 2026,
-    "pernyataanRisiko": "Keterlambatan penyampaian informasi publik",
-    "skalaKemungkinan": 3,
-    "skalaDampak": 4
+    "kode_sasaran_opd": "SAS-OPD-001",
+    "pernyataan_risiko": "Keterlambatan penyampaian informasi publik",
+    "skala_kemungkinan": 3,
+    "skala_dampak": 4,
+    "rencana_tindak_pengendalian": "Menyusun jadwal verifikasi berkala",
+    "kode_perangkat_yang_menangani": "1.01.01"
   }'
 ```
+
+Kode Risiko OPD dibuat otomatis setelah insert dengan format
+`RSK-OPD-####`.
 
 ### Format respons
 
@@ -154,13 +165,13 @@ Semua respons mengikuti struktur `ApiResponse` yang seragam:
 src/main/java/cc/kertaskerja/manrisk/
 ├── ManriskApplication.java        # Entry point
 ├── common/          # BaseAuditable (created_at / updated_at)
-├── config/          # OpenApiConfig, RestTemplateConfig
-├── controller/      # RisikoController — REST endpoints
+├── config/          # OpenAPI, security, CORS, dan konfigurasi aplikasi
+├── controller/      # RisikoOpdController, Pemda, Operasional, dan AI
 ├── dto/             # ApiResponse + Request/Response DTO
-├── entity/          # Risiko (JPA entity)
+├── entity/          # RisikoOpd, RisikoPemda, dan RisikoOperasional
 ├── exception/       # GlobalExceptionHandler + custom exceptions
-├── repository/      # RisikoRepository (Spring Data JPA)
-└── service/         # RisikoService — business logic
+├── repository/      # Repository Spring Data JPA per scope risiko
+└── service/         # Business logic risiko per scope
 
 src/main/resources/
 ├── application.yml               # Konfigurasi (baca dari .env)

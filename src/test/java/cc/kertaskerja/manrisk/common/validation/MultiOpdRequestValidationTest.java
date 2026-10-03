@@ -1,6 +1,6 @@
 package cc.kertaskerja.manrisk.common.validation;
 
-import cc.kertaskerja.manrisk.dto.Risiko.RisikoReqDTO;
+import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoOperasional.RisikoOperasionalReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaReqDTO;
 import jakarta.validation.Validation;
@@ -57,7 +57,7 @@ class MultiOpdRequestValidationTest {
 
     private static List<Object> requestsWithCodes(String codes) {
         return List.of(
-              RisikoReqDTO.builder().kodePerangkatYangMenangani(codes).build(),
+              RisikoOpdReqDTO.builder().kodePerangkatYangMenangani(codes).build(),
               RisikoPemdaReqDTO.builder().kodePerangkatYangMenangani(codes).build(),
               RisikoOperasionalReqDTO.builder().kodePerangkatYangMenangani(codes).build()
         );

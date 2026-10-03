@@ -44,7 +44,8 @@ public class SecurityConfig {
               .csrf(AbstractHttpConfigurer::disable)
               .addFilterBefore(risikoSessionAuthFilter, UsernamePasswordAuthenticationFilter.class)
               .authorizeHttpRequests(auth -> auth
-                    .requestMatchers("/risiko", "/risiko/**", "/risiko-pemda", "/risiko-pemda/**").permitAll()
+                    .requestMatchers("/risiko", "/risiko/**", "/risiko-opd", "/risiko-opd/**").permitAll()
+                    .requestMatchers("/risiko-pemda", "/risiko-pemda/**").permitAll()
                     .requestMatchers("/risiko-operasional", "/risiko-operasional/**").permitAll()
                     .anyRequest().authenticated())
               .oauth2ResourceServer(oauth -> oauth
@@ -52,6 +53,7 @@ public class SecurityConfig {
                     .bearerTokenResolver(request -> {
                         String path = request.getServletPath();
                         if ("/risiko".equals(path) || path.startsWith("/risiko/")
+                              || "/risiko-opd".equals(path) || path.startsWith("/risiko-opd/")
                               || "/risiko-pemda".equals(path) || path.startsWith("/risiko-pemda/")
                               || "/risiko-operasional".equals(path) || path.startsWith("/risiko-operasional/")) return null;
                         return bearerTokenResolver.resolve(request);

@@ -26,7 +26,8 @@ class RisikoSessionAuthFilterTest {
 
     @Test
     void requiresSessionOnAllRiskPrefixes() throws Exception {
-        for (String path : List.of("/risiko", "/risiko/generate-ai", "/risiko-pemda",
+        for (String path : List.of("/risiko", "/risiko/generate-ai", "/risiko-opd", "/risiko-opd/1",
+              "/risiko-pemda",
               "/risiko-pemda/1", "/risiko-operasional", "/risiko-operasional/1")) {
             MockHttpServletRequest request = riskRequest(path);
             MockHttpServletResponse response = new MockHttpServletResponse();

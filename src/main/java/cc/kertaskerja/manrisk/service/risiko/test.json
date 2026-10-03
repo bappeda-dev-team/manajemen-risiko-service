@@ -5,7 +5,7 @@
     {
       "kode_opd": "1.03.0.00.0.00.01.0000",
       "kode_sasaran_opd": "SAS-OPD-34035",
-      "kode_risiko": "RSK-0002",
+      "kode_risiko": "RSK-OPD-0002",
       "tahun": 2026,
       "sasaran_opd": "Meningkatnya Ketertiban Organisasi Masyarakat",
       "periode": "2025-2030",
@@ -78,7 +78,7 @@
     {
       "kode_opd": "1.03.0.00.0.00.01.0000",
       "kode_sasaran_opd": "SAS-OPD-34035",
-      "kode_risiko": "RSK-0002",
+      "kode_risiko": "RSK-OPD-0002",
       "tahun": 2026,
       "sasaran_opd": "Meningkatnya Ketertiban Organisasi Masyarakat",
       "periode": "2025-2030",
@@ -304,7 +304,6 @@ getTujuanSasaran has response
 }
 
 
-I want to create api GET by `kode_sasaran_opd`, http://localhost:8080/manrisk/api/risiko/SAS-OPD-34035
+I want to create api GET by `kode_sasaran_opd`, http://localhost:8080/manrisk/api/risiko-opd/sasaran/SAS-OPD-34035
 
 and it will have response
-

@@ -25,7 +25,7 @@ public class RekomendasiRisikoController {
 
     @PostMapping("/generate-ai")
     @Operation(summary = "Buat usulan AI risiko OPD, Pemda, atau Operasional",
-          description = "Memerlukan X-Session-Id yang tervalidasi oleh Auth Service.")
+          description = "Memerlukan sesi yang nantinya diverifikasi gateway; mode pengembangan lokal saat ini belum memverifikasi sesi.")
     public ResponseEntity<ApiResponse<GenerateAiResDTO>> generateAi(
             @Valid @RequestBody GenerateAiReqDTO request,
             HttpServletRequest servletRequest) {

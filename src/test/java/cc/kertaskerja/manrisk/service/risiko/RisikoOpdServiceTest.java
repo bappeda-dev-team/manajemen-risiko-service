@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -33,6 +34,63 @@ class RisikoOpdServiceTest {
 
     @InjectMocks
     private RisikoOpdService risikoOpdService;
+
+    @Test
+    void laporanAllSasaranUsesOpdAndYearAndReturnsFullFlatRows() {
+        RisikoOpd record = risiko(7L, "RSK-OPD-0007");
+        record.setRencanaTindakPengendalian("Evaluasi triwulanan");
+        record.setRealisasiTindakPengendalian("Sudah dimulai");
+        when(risikoOpdRepository.findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc("OPD-001", 2026))
+              .thenReturn(List.of(record));
+
+        List<RisikoOpdResDTO> response = risikoOpdService.getRisikoLaporan(2026, " OPD-001 ", null);
+
+        assertEquals(1, response.size());
+        assertEquals("opd", response.getFirst().getScope());
+        assertEquals(2026, response.getFirst().getTahun());
+        assertEquals("OPD-001", response.getFirst().getKodeOpd());
+        assertEquals(KODE_SASARAN, response.getFirst().getKodeSasaranOpd());
+        assertEquals("Evaluasi triwulanan", response.getFirst().getRencanaTindakPengendalian());
+        assertEquals("Sudah dimulai", response.getFirst().getRealisasiTindakPengendalian());
+        verify(risikoOpdRepository).findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc("OPD-001", 2026);
+    }
+
+    @Test
+    void laporanSelectedSasaranUsesOneFilteredQueryAndDeduplicatesCodes() {
+        List<String> selected = List.of("SAS-001", "SAS-003");
+        when(risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+              "OPD-001", 2026, selected)).thenReturn(List.of(risiko(7L, "RSK-OPD-0007")));
+
+        List<RisikoOpdResDTO> response = risikoOpdService.getRisikoLaporan(
+              2026, "OPD-001", List.of(" SAS-001 ", "SAS-003", "SAS-001"));
+
+        assertEquals(1, response.size());
+        verify(risikoOpdRepository).findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+              "OPD-001", 2026, selected);
+    }
+
+    @Test
+    void laporanSelectedSasaranWithoutRisksReturnsEmptyList() {
+        when(risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+              "OPD-001", 2026, List.of("SAS-EMPTY"))).thenReturn(List.of());
+
+        assertEquals(List.of(), risikoOpdService.getRisikoLaporan(2026, "OPD-001", List.of("SAS-EMPTY")));
+    }
+
+    @Test
+    void laporanRejectsInvalidContextOrExplicitEmptySasaranBeforeQuery() {
+        for (Runnable action : List.<Runnable>of(
+              () -> risikoOpdService.getRisikoLaporan(0, "OPD-001", null),
+              () -> risikoOpdService.getRisikoLaporan(2026, " ", null),
+              () -> risikoOpdService.getRisikoLaporan(2026, "OPD-001", List.of()),
+              () -> risikoOpdService.getRisikoLaporan(2026, "OPD-001", List.of("")),
+              () -> risikoOpdService.getRisikoLaporan(2026, "OPD-001", List.of("SAS-1,SAS-2")))) {
+            RiskException error = assertThrows(RiskException.class, action::run);
+            assertEquals(400, error.getStatus());
+            assertEquals("RISK_INVALID_INPUT", error.getCode());
+        }
+        verifyNoInteractions(risikoOpdRepository);
+    }
 
     @Test
     void returnsEachRiskIdentityForIdentifikasiRows() {

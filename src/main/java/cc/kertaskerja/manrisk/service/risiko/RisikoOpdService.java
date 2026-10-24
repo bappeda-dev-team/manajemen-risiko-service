@@ -30,6 +30,18 @@ public class RisikoOpdService {
         return risikoOpdRepository.findAll().stream().map(this::toResDTO).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RisikoOpdResDTO> getRisikoLaporan(int tahun, String kodeOpd, List<String> kodeSasaran) {
+        int selectedYear = RisikoLaporanFilter.year(tahun);
+        String selectedOpd = RisikoLaporanFilter.opd(kodeOpd);
+        List<String> selectedCodes = RisikoLaporanFilter.sasaran(kodeSasaran);
+        List<RisikoOpd> records = selectedCodes.isEmpty()
+              ? risikoOpdRepository.findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc(selectedOpd, selectedYear)
+              : risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+                    selectedOpd, selectedYear, selectedCodes);
+        return records.stream().map(this::toResDTO).toList();
+    }
+
     public RisikoOpdResDTO getRisikoByKodeSasaranOpd(String kodeSasaranOpd, String type) {
         String normalizedType = normalizedType(type);
         String normalizedKodeSasaran = requiredPath(kodeSasaranOpd, "Kode sasaran OPD tidak valid.");

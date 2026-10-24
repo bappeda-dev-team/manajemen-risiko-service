@@ -5,7 +5,10 @@ import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdResDTO;
 import cc.kertaskerja.manrisk.service.risiko.RisikoOpdService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -24,6 +27,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -40,6 +44,20 @@ public class RisikoOpdController {
         List<RisikoOpdResDTO> result = risikoOpdService.getAllRisiko();
         return ResponseEntity.ok(ApiResponse.success(result,
               "Retrieved " + result.size() + " data risiko OPD successfully"));
+    }
+
+    @GetMapping("/laporan")
+    @Operation(summary = "Ambil seluruh risiko OPD untuk laporan pada satu OPD dan tahun",
+          parameters = @Parameter(name = "kodeSasaran", in = ParameterIn.QUERY,
+                description = "Opsional; ulangi untuk beberapa kode sasaran. Jika absen, semua sasaran pada konteks diambil."))
+    public ResponseEntity<ApiResponse<List<RisikoOpdResDTO>>> getRisikoLaporan(
+          @RequestParam(name = "tahun") int tahun,
+          @RequestParam(name = "kodeOpd") String kodeOpd,
+          HttpServletRequest request) {
+        String[] selectedCodes = request.getParameterValues("kodeSasaran");
+        List<String> kodeSasaran = selectedCodes == null ? null : Arrays.asList(selectedCodes);
+        return ResponseEntity.ok(ApiResponse.success(
+              risikoOpdService.getRisikoLaporan(tahun, kodeOpd, kodeSasaran), ""));
     }
 
     @GetMapping("/sasaran/{kodeSasaranOpd}")

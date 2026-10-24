@@ -10,24 +10,15 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
 
 class RisikoSessionAuthFilterTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private final RisikoAuthenticatedUser authenticatedUser = new RisikoAuthenticatedUser(
-          "user-session", "Session User", "OPD-001", "19870001", List.of("USER"));
-    private final RisikoSessionAuthFilter filter = new RisikoSessionAuthFilter(sessionId -> {
-        if ("valid-session".equals(sessionId)) return authenticatedUser;
-        if ("unavailable-session".equals(sessionId)) {
-            throw new RisikoSessionException(RisikoSessionException.Reason.UNAVAILABLE);
-        }
-        throw new RisikoSessionException(RisikoSessionException.Reason.UNAUTHORIZED);
-    }, objectMapper);
+    private final RisikoSessionAuthFilter filter = new RisikoSessionAuthFilter(objectMapper, true);
 
     @Test
     void requiresSessionOnAllRiskPrefixes() throws Exception {
         for (String path : List.of("/risiko", "/risiko/generate-ai", "/risiko-opd", "/risiko-opd/1",
-              "/risiko-pemda",
+              "/risiko-opd/laporan", "/risiko-pemda/laporan", "/risiko-pemda",
               "/risiko-pemda/1", "/risiko-operasional", "/risiko-operasional/1")) {
             MockHttpServletRequest request = riskRequest(path);
             MockHttpServletResponse response = new MockHttpServletResponse();
@@ -52,9 +43,9 @@ class RisikoSessionAuthFilterTest {
     }
 
     @Test
-    void acceptsValidatedSessionAndIgnoresBrowserIdentityHeaders() throws Exception {
+    void localModeAcceptsHeaderWithoutClaimingItIsAValidatedIdentity() throws Exception {
         MockHttpServletRequest request = riskRequest("/risiko-operasional");
-        request.addHeader(AuthSessionClient.SESSION_HEADER, "valid-session");
+        request.addHeader(RisikoSessionAuthFilter.SESSION_HEADER, "unverified-local-session");
         request.addHeader("X-Manrisk-User-Id", "spoofed-user");
         request.addHeader("Authorization", "Bearer shared-secret");
         MockHttpServletResponse response = new MockHttpServletResponse();
@@ -62,32 +53,45 @@ class RisikoSessionAuthFilterTest {
         filter.doFilter(request, response, new MockFilterChain());
 
         assertEquals(200, response.getStatus());
-        assertEquals("user-session", request.getAttribute(RisikoSessionAuthFilter.CALLER_ATTRIBUTE));
-        assertSame(authenticatedUser, request.getAttribute(RisikoSessionAuthFilter.AUTHENTICATED_USER_ATTRIBUTE));
+        assertEquals("local-dev-unverified", request.getAttribute(RisikoSessionAuthFilter.CALLER_ATTRIBUTE));
     }
 
     @Test
-    void rejectsInvalidSession() throws Exception {
+    void localModeStillRejectsPlaceholderSessionHeaders() throws Exception {
         MockHttpServletRequest request = riskRequest("/risiko");
-        request.addHeader(AuthSessionClient.SESSION_HEADER, "invalid-session");
+        request.addHeader(RisikoSessionAuthFilter.SESSION_HEADER, "ISI_SESSION_ID");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, new MockFilterChain());
 
         assertEquals(401, response.getStatus());
-        assertEquals("RISK_SESSION_UNAUTHORIZED", errorCode(response));
+        assertEquals("RISK_SESSION_REQUIRED", errorCode(response));
     }
 
     @Test
-    void surfacesUnavailableAuthServiceAs503() throws Exception {
+    void defaultModeFailsClosedWhenNoVerifierIsConfigured() throws Exception {
         MockHttpServletRequest request = riskRequest("/risiko-operasional");
-        request.addHeader(AuthSessionClient.SESSION_HEADER, "unavailable-session");
+        request.addHeader(RisikoSessionAuthFilter.SESSION_HEADER, "any-session");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        new RisikoSessionAuthFilter(objectMapper, false).doFilter(request, response, new MockFilterChain());
+
+        assertEquals(503, response.getStatus());
+        assertEquals("RISK_AUTH_UNAVAILABLE", errorCode(response));
+    }
+
+    @Test
+    void localModeRejectsNonLoopbackRequestEvenWithSessionHeader() throws Exception {
+        MockHttpServletRequest request = riskRequest("/risiko-opd/laporan");
+        request.setRemoteAddr("192.0.2.15");
+        request.addHeader(RisikoSessionAuthFilter.SESSION_HEADER, "any-session");
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         filter.doFilter(request, response, new MockFilterChain());
 
-        assertEquals(503, response.getStatus());
-        assertEquals("RISK_AUTH_UNAVAILABLE", errorCode(response));
+        assertEquals(403, response.getStatus());
+        assertEquals("RISK_LOCAL_ONLY", errorCode(response));
+        assertNull(request.getAttribute(RisikoSessionAuthFilter.CALLER_ATTRIBUTE));
     }
 
     @Test

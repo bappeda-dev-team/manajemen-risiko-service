@@ -91,9 +91,13 @@ Setelah aplikasi berjalan, buka:
 - **Swagger UI** → http://localhost:8080/manrisk/api/swagger-ui.html
 - **OpenAPI JSON** → http://localhost:8080/manrisk/api/v3/api-docs
 
-Klik **Authorize** pada Swagger UI lalu masukkan `X-Session-Id` hasil login ke
-Auth Service. Untuk deployment transisi, internal token hanya dipakai oleh BFF
-lama di sisi server dan tidak boleh dimasukkan ke browser.
+Validasi sesi ke Auth Service sementara dilepas karena layanan Mahulu tidak
+menyediakan endpoint `/user-info`. Secara default, endpoint risiko **fail-closed**.
+Untuk pengujian lokal saja, set `MANRISK_AUTH_ALLOW_UNVERIFIED_LOCAL=true` di
+`.env` lalu restart backend; request dari loopback tetap harus membawa header
+`X-Session-Id`, tetapi nilainya **tidak diverifikasi**. Jangan aktifkan opsi ini
+di deployment publik. Integrasi gateway/login terpusat harus menggantikannya
+sebelum fitur risiko dipakai produksi.
 
 ---
 

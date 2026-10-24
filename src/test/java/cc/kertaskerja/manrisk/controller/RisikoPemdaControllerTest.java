@@ -16,9 +16,12 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -55,6 +58,55 @@ class RisikoPemdaControllerTest {
               .andExpect(status().isCreated())
               .andExpect(jsonPath("$.data.scope").value("pemda"))
               .andExpect(jsonPath("$.data.kode_risiko").value("RSK-PEM-0001"));
+    }
+
+    @Test
+    void laporanAllSasaranReturnsFullFlatRows() throws Exception {
+        when(service.getRisikoLaporan(2026, null)).thenReturn(List.of(
+              RisikoPemdaResDTO.builder()
+                    .scope("pemda").id(9L).tahun(2026).kodeSasaranPemda("SAS-PEM-001")
+                    .kodeRisiko("RSK-PEM-0009").rencanaTindakPengendalian("RTP").build()));
+
+        mockMvc.perform(get("/risiko-pemda/laporan").param("tahun", "2026"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.data[0].scope").value("pemda"))
+              .andExpect(jsonPath("$.data[0].kode_sasaran_pemda").value("SAS-PEM-001"))
+              .andExpect(jsonPath("$.data[0].rencana_tindak_pengendalian").value("RTP"))
+              .andExpect(jsonPath("$.data[0].kode_opd").doesNotExist());
+    }
+
+    @Test
+    void laporanSelectedSasaranForwardsRepeatedQueryParameters() throws Exception {
+        when(service.getRisikoLaporan(2026, List.of("SAS-PEM-001", "SAS-PEM-003")))
+              .thenReturn(List.of());
+
+        mockMvc.perform(get("/risiko-pemda/laporan")
+                    .param("tahun", "2026")
+                    .param("kodeSasaran", "SAS-PEM-001", "SAS-PEM-003"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.data").isEmpty());
+
+        verify(service).getRisikoLaporan(2026, List.of("SAS-PEM-001", "SAS-PEM-003"));
+    }
+
+    @Test
+    void laporanRequiresYear() throws Exception {
+        mockMvc.perform(get("/risiko-pemda/laporan"))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void laporanForwardsExplicitlyEmptySasaranInsteadOfTreatingItAsAll() throws Exception {
+        when(service.getRisikoLaporan(2026, List.of("")))
+              .thenThrow(new RiskException(400, "RISK_INVALID_INPUT", "Kode sasaran tidak boleh kosong."));
+
+        mockMvc.perform(get("/risiko-pemda/laporan")
+                    .param("tahun", "2026")
+                    .param("kodeSasaran", ""))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
     }
 
     @Test

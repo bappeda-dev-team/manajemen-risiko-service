@@ -177,7 +177,14 @@ public class GlobalExceptionHandler {
         logger.warning("Method Argument Type Mismatch Exception: " + ex.getMessage());
 
         String message = String.format("Invalid value '%s' for parameter '%s'. Expected type: %s",
-              ex.getValue(), ex.getName(), ex.getRequiredType().getSimpleName());
+              ex.getValue(), ex.getName(),
+              ex.getRequiredType() == null ? "valid value" : ex.getRequiredType().getSimpleName());
+
+        if (isRiskRequest(request)) {
+            return new ResponseEntity<>(ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(), Map.of("code", "RISK_INVALID_INPUT"), message),
+                  HttpStatus.BAD_REQUEST);
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.BAD_REQUEST.value(),
@@ -195,6 +202,12 @@ public class GlobalExceptionHandler {
 
         String message = String.format("Required parameter '%s' of type '%s' is missing",
               ex.getParameterName(), ex.getParameterType());
+
+        if (isRiskRequest(request)) {
+            return new ResponseEntity<>(ApiResponse.error(
+                  HttpStatus.BAD_REQUEST.value(), Map.of("code", "RISK_INVALID_INPUT"), message),
+                  HttpStatus.BAD_REQUEST);
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.BAD_REQUEST.value(),

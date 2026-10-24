@@ -6,21 +6,30 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Map;
 
 @Component
-@RequiredArgsConstructor
 public class RisikoSessionAuthFilter extends OncePerRequestFilter {
+    public static final String SESSION_HEADER = "X-Session-Id";
     public static final String CALLER_ATTRIBUTE = "risikoCaller";
-    public static final String AUTHENTICATED_USER_ATTRIBUTE = "risikoAuthenticatedUser";
-    private final RisikoSessionValidator sessionValidator;
+    private static final String LOCAL_DEV_CALLER = "local-dev-unverified";
+
     private final ObjectMapper objectMapper;
+    private final boolean allowUnverifiedLocal;
+
+    public RisikoSessionAuthFilter(ObjectMapper objectMapper,
+                                   @Value("${manrisk.auth.allow-unverified-local:false}") boolean allowUnverifiedLocal) {
+        this.objectMapper = objectMapper;
+        this.allowUnverifiedLocal = allowUnverifiedLocal;
+    }
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
@@ -35,32 +44,28 @@ public class RisikoSessionAuthFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        String sessionId = request.getHeader(AuthSessionClient.SESSION_HEADER);
+        String sessionId = request.getHeader(SESSION_HEADER);
         if (!hasText(sessionId)) {
             reject(response, HttpServletResponse.SC_UNAUTHORIZED, "RISK_SESSION_REQUIRED",
                   "Risk session is required");
             return;
         }
 
-        try {
-            RisikoAuthenticatedUser user = sessionValidator.validate(sessionId);
-            if (user == null || !hasText(user.callerId())) {
-                reject(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "RISK_AUTH_UNAVAILABLE",
-                      "Layanan autentikasi belum dapat dihubungi.");
-                return;
-            }
-            request.setAttribute(CALLER_ATTRIBUTE, user.callerId());
-            request.setAttribute(AUTHENTICATED_USER_ATTRIBUTE, user);
-            filterChain.doFilter(request, response);
-        } catch (RisikoSessionException exception) {
-            if (exception.reason() == RisikoSessionException.Reason.UNAUTHORIZED) {
-                reject(response, HttpServletResponse.SC_UNAUTHORIZED, "RISK_SESSION_UNAUTHORIZED",
-                      "Unauthorized risk session");
-            } else {
-                reject(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "RISK_AUTH_UNAVAILABLE",
-                      "Layanan autentikasi belum dapat dihubungi.");
-            }
+        if (!allowUnverifiedLocal) {
+            reject(response, HttpServletResponse.SC_SERVICE_UNAVAILABLE, "RISK_AUTH_UNAVAILABLE",
+                  "Validasi sesi risiko belum dikonfigurasi.");
+            return;
         }
+
+        if (!isLoopback(request.getRemoteAddr())) {
+            reject(response, HttpServletResponse.SC_FORBIDDEN, "RISK_LOCAL_ONLY",
+                  "Mode sesi tanpa verifikasi hanya tersedia dari localhost.");
+            return;
+        }
+
+        // Temporary local development mode: the header is not an authenticated identity.
+        request.setAttribute(CALLER_ATTRIBUTE, LOCAL_DEV_CALLER);
+        filterChain.doFilter(request, response);
     }
 
     private void reject(HttpServletResponse response, int status, String code, String message) throws IOException {
@@ -71,5 +76,14 @@ public class RisikoSessionAuthFilter extends OncePerRequestFilter {
 
     private static boolean hasText(String value) {
         return value != null && !value.isBlank() && !value.startsWith("ISI_");
+    }
+
+    private static boolean isLoopback(String address) {
+        if (address == null || address.isBlank()) return false;
+        try {
+            return InetAddress.getByName(address).isLoopbackAddress();
+        } catch (UnknownHostException exception) {
+            return false;
+        }
     }
 }

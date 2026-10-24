@@ -26,6 +26,17 @@ public class RisikoPemdaService {
         return risikoPemdaRepository.findAll().stream().map(this::toResDTO).toList();
     }
 
+    @Transactional(readOnly = true)
+    public List<RisikoPemdaResDTO> getRisikoLaporan(int tahun, List<String> kodeSasaran) {
+        int selectedYear = RisikoLaporanFilter.year(tahun);
+        List<String> selectedCodes = RisikoLaporanFilter.sasaran(kodeSasaran);
+        List<RisikoPemda> records = selectedCodes.isEmpty()
+              ? risikoPemdaRepository.findByTahunOrderByKodeSasaranPemdaAscIdAsc(selectedYear)
+              : risikoPemdaRepository.findByTahunAndKodeSasaranPemdaInOrderByKodeSasaranPemdaAscIdAsc(
+                    selectedYear, selectedCodes);
+        return records.stream().map(this::toResDTO).toList();
+    }
+
     public RisikoPemdaResDTO getRisikoByKodeSasaranPemda(String kodeSasaranPemda, String type) {
         String normalizedType = normalizedType(type);
         String normalizedKode = requiredPath(kodeSasaranPemda, "Kode sasaran Pemda tidak valid.");

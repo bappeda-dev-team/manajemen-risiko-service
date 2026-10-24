@@ -16,9 +16,12 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -58,6 +61,66 @@ class RisikoOpdControllerTest {
               .andExpect(status().isCreated())
               .andExpect(jsonPath("$.data.scope").value("opd"))
               .andExpect(jsonPath("$.data.kode_risiko").value("RSK-OPD-0001"));
+    }
+
+    @Test
+    void laporanAllSasaranReturnsFlatFullRiskRows() throws Exception {
+        when(service.getRisikoLaporan(2026, "OPD-001", null)).thenReturn(List.of(
+              RisikoOpdResDTO.builder()
+                    .scope("opd").id(7L).kodeOpd("OPD-001").tahun(2026)
+                    .kodeSasaranOpd("SAS-001").kodeRisiko("RSK-OPD-0007")
+                    .skalaKemungkinan(3).rencanaTindakPengendalian("RTP")
+                    .realisasiTindakPengendalian("Selesai").build()));
+
+        mockMvc.perform(get("/risiko-opd/laporan").param("tahun", "2026").param("kodeOpd", "OPD-001"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.data[0].scope").value("opd"))
+              .andExpect(jsonPath("$.data[0].kode_sasaran_opd").value("SAS-001"))
+              .andExpect(jsonPath("$.data[0].rencana_tindak_pengendalian").value("RTP"))
+              .andExpect(jsonPath("$.data[0].realisasi_tindak_pengendalian").value("Selesai"))
+              .andExpect(jsonPath("$.data[0].risiko").doesNotExist());
+    }
+
+    @Test
+    void laporanSelectedSasaranForwardsRepeatedQueryParameters() throws Exception {
+        when(service.getRisikoLaporan(2026, "OPD-001", List.of("SAS-001", "SAS-003")))
+              .thenReturn(List.of());
+
+        mockMvc.perform(get("/risiko-opd/laporan")
+                    .param("tahun", "2026")
+                    .param("kodeOpd", "OPD-001")
+                    .param("kodeSasaran", "SAS-001", "SAS-003"))
+              .andExpect(status().isOk())
+              .andExpect(jsonPath("$.data").isEmpty());
+
+        verify(service).getRisikoLaporan(2026, "OPD-001", List.of("SAS-001", "SAS-003"));
+    }
+
+    @Test
+    void laporanRejectsMissingRequiredParameters() throws Exception {
+        mockMvc.perform(get("/risiko-opd/laporan").param("kodeOpd", "OPD-001"))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
+        mockMvc.perform(get("/risiko-opd/laporan").param("tahun", "2026"))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
+        mockMvc.perform(get("/risiko-opd/laporan").param("tahun", "invalid").param("kodeOpd", "OPD-001"))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    void laporanForwardsExplicitlyEmptySasaranInsteadOfTreatingItAsAll() throws Exception {
+        when(service.getRisikoLaporan(2026, "OPD-001", List.of("")))
+              .thenThrow(new RiskException(400, "RISK_INVALID_INPUT", "Kode sasaran tidak boleh kosong."));
+
+        mockMvc.perform(get("/risiko-opd/laporan")
+                    .param("tahun", "2026")
+                    .param("kodeOpd", "OPD-001")
+                    .param("kodeSasaran", ""))
+              .andExpect(status().isBadRequest())
+              .andExpect(jsonPath("$.data.code").value("RISK_INVALID_INPUT"));
     }
 
     @Test

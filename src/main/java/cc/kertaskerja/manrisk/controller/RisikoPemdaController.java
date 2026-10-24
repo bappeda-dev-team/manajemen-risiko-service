@@ -5,7 +5,10 @@ import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaResDTO;
 import cc.kertaskerja.manrisk.service.risiko.RisikoPemdaService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -16,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -32,6 +36,19 @@ public class RisikoPemdaController {
         List<RisikoPemdaResDTO> result = risikoPemdaService.getAllRisiko();
         return ResponseEntity.ok(ApiResponse.success(result,
               "Retrieved " + result.size() + " data risiko Pemda successfully"));
+    }
+
+    @GetMapping("/laporan")
+    @Operation(summary = "Ambil seluruh risiko Pemda untuk laporan pada satu tahun",
+          parameters = @Parameter(name = "kodeSasaran", in = ParameterIn.QUERY,
+                description = "Opsional; ulangi untuk beberapa kode sasaran. Jika absen, semua sasaran pada tahun diambil."))
+    public ResponseEntity<ApiResponse<List<RisikoPemdaResDTO>>> getRisikoLaporan(
+          @RequestParam(name = "tahun") int tahun,
+          HttpServletRequest request) {
+        String[] selectedCodes = request.getParameterValues("kodeSasaran");
+        List<String> kodeSasaran = selectedCodes == null ? null : Arrays.asList(selectedCodes);
+        return ResponseEntity.ok(ApiResponse.success(
+              risikoPemdaService.getRisikoLaporan(tahun, kodeSasaran), ""));
     }
 
     @GetMapping("/sasaran/{kodeSasaranPemda}")

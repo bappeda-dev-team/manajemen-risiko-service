@@ -14,4 +14,9 @@ public interface RisikoPemdaRepository extends JpaRepository<RisikoPemda, Long> 
 
     List<RisikoPemda> findByKodeSasaranPemdaOrderByIdAsc(String kodeSasaranPemda);
 
+    List<RisikoPemda> findByTahunOrderByKodeSasaranPemdaAscIdAsc(Integer tahun);
+
+    List<RisikoPemda> findByTahunAndKodeSasaranPemdaInOrderByKodeSasaranPemdaAscIdAsc(
+          Integer tahun, List<String> kodeSasaran);
+
 }

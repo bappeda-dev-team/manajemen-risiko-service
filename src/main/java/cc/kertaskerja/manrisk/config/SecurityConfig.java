@@ -49,7 +49,7 @@ public class SecurityConfig {
                     .requestMatchers("/risiko-operasional", "/risiko-operasional/**").permitAll()
                     .anyRequest().authenticated())
               .oauth2ResourceServer(oauth -> oauth
-                    // Risk routes use X-Session-Id; other routes may still use JWT.
+                    // Risk routes use the temporary local-only filter; other routes may still use JWT.
                     .bearerTokenResolver(request -> {
                         String path = request.getServletPath();
                         if ("/risiko".equals(path) || path.startsWith("/risiko/")

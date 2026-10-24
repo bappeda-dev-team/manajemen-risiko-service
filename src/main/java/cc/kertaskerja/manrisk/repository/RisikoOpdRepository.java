@@ -13,4 +13,9 @@ public interface RisikoOpdRepository extends JpaRepository<RisikoOpd, Long> {
     Optional<RisikoOpd> findByKodeRisiko(String kodeRisiko);
 
     List<RisikoOpd> findByKodeSasaranOpdOrderByIdAsc(String kodeSasaranOpd);
+
+    List<RisikoOpd> findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc(String kodeOpd, Integer tahun);
+
+    List<RisikoOpd> findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+          String kodeOpd, Integer tahun, List<String> kodeSasaran);
 }

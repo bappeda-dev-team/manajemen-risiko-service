@@ -68,8 +68,9 @@ server:
 # Generate AI is disabled until its server-only variables are supplied manually.
 manrisk:
   auth:
-    # Temporary local-only bypass; keep false outside local development.
-    allow-unverified-local: ${MANRISK_AUTH_ALLOW_UNVERIFIED_LOCAL:false}
+    base-url: ${AUTH_API_URL:}
+    connect-timeout-seconds: ${MANRISK_AUTH_CONNECT_TIMEOUT_SECONDS:3}
+    request-timeout-seconds: ${MANRISK_AUTH_REQUEST_TIMEOUT_SECONDS:3}
   ai:
     enabled: ${MANRISK_AI_ENABLED:false}
     rate-limit-per-minute: ${MANRISK_AI_RATE_LIMIT_PER_MINUTE:5}

@@ -19,6 +19,7 @@ import org.springframework.web.method.annotation.MethodArgumentTypeMismatchExcep
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 @RestControllerAdvice
@@ -341,7 +342,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleDataAccessException(
           DataAccessException ex, HttpServletRequest request) {
 
-        logger.severe("Data Access Exception: " + ex.getMessage());
+        logger.log(Level.SEVERE, "Data access failed at " + request.getRequestURI(), ex);
+
+        if (isRiskRequest(request)) {
+            ApiResponse<Object> response = ApiResponse.error(
+                  HttpStatus.SERVICE_UNAVAILABLE.value(),
+                  Map.of("code", "RISK_DATA_UNAVAILABLE"),
+                  "Data risiko belum dapat dimuat. Coba lagi beberapa saat lagi."
+            );
+            return new ResponseEntity<>(response, HttpStatus.SERVICE_UNAVAILABLE);
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -355,7 +365,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleNullPointerException(
           NullPointerException ex, HttpServletRequest request) {
 
-        logger.severe("Null Pointer Exception: " + ex.getMessage());
+        logger.log(Level.SEVERE, "Null pointer exception at " + request.getRequestURI(), ex);
+
+        if (isRiskRequest(request)) {
+            return riskInternalError();
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -369,7 +383,11 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleRuntimeException(
           RuntimeException ex, HttpServletRequest request) {
 
-        logger.severe("Runtime Exception: " + ex.getMessage());
+        logger.log(Level.SEVERE, "Runtime exception at " + request.getRequestURI(), ex);
+
+        if (isRiskRequest(request)) {
+            return riskInternalError();
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.INTERNAL_SERVER_ERROR.value(),
@@ -383,13 +401,26 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiResponse<Object>> handleGenericException(
           Exception ex, HttpServletRequest request) {
 
-        logger.severe("Generic Exception: " + ex.getMessage());
+        logger.log(Level.SEVERE, "Unexpected exception at " + request.getRequestURI(), ex);
+
+        if (isRiskRequest(request)) {
+            return riskInternalError();
+        }
 
         ApiResponse<Object> response = ApiResponse.error(
               HttpStatus.INTERNAL_SERVER_ERROR.value(),
               "An unexpected error occurred. Please contact support if the problem persists."
         );
 
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    private ResponseEntity<ApiResponse<Object>> riskInternalError() {
+        ApiResponse<Object> response = ApiResponse.error(
+              HttpStatus.INTERNAL_SERVER_ERROR.value(),
+              Map.of("code", "RISK_INTERNAL_ERROR"),
+              "Terjadi kesalahan saat memproses risiko. Coba lagi atau hubungi administrator bila masalah berlanjut."
+        );
         return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

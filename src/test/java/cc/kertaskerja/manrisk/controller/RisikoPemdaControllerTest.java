@@ -11,6 +11,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.test.web.servlet.MockMvc;
@@ -145,6 +146,31 @@ class RisikoPemdaControllerTest {
         mockMvc.perform(get("/risiko-pemda/sasaran/SAS-PEM-001").param("type", "unknown"))
               .andExpect(status().isBadRequest())
               .andExpect(jsonPath("$.data.code").value("RISK_TYPE_INVALID"));
+    }
+
+    @Test
+    void unavailableRiskDataReturnsActionableServiceError() throws Exception {
+        when(service.getRisikoByKodeSasaranPemda(eq("SAS-PEM-001"), eq("identifikasi")))
+              .thenThrow(new DataAccessResourceFailureException("Database schema is unavailable"));
+
+        mockMvc.perform(get("/risiko-pemda/sasaran/SAS-PEM-001").param("type", "identifikasi"))
+              .andExpect(status().isServiceUnavailable())
+              .andExpect(jsonPath("$.status").value(503))
+              .andExpect(jsonPath("$.data.code").value("RISK_DATA_UNAVAILABLE"))
+              .andExpect(jsonPath("$.message").value("Data risiko belum dapat dimuat. Coba lagi beberapa saat lagi."));
+    }
+
+    @Test
+    void unexpectedRiskFailureReturnsStableErrorCode() throws Exception {
+        when(service.getRisikoByKodeSasaranPemda(eq("SAS-PEM-001"), eq("identifikasi")))
+              .thenThrow(new IllegalStateException("Unexpected implementation detail"));
+
+        mockMvc.perform(get("/risiko-pemda/sasaran/SAS-PEM-001").param("type", "identifikasi"))
+              .andExpect(status().isInternalServerError())
+              .andExpect(jsonPath("$.status").value(500))
+              .andExpect(jsonPath("$.data.code").value("RISK_INTERNAL_ERROR"))
+              .andExpect(jsonPath("$.message").value(
+                    "Terjadi kesalahan saat memproses risiko. Coba lagi atau hubungi administrator bila masalah berlanjut."));
     }
 
     private String validRequest() {

@@ -67,7 +67,7 @@ DB_URL=jdbc:postgresql://localhost:5432/manajemen_risiko
 DB_USERNAME=your_db_username
 DB_PASSWORD=your_db_password
 SERVER_PORT=8080
-SWAGGER_SERVER_URL=http://localhost:8080/manrisk/api
+SWAGGER_SERVER_URL=http://localhost:8080
 ```
 
 > ℹ️ File `.env` sudah di-`.gitignore` — jangan pernah commit kredensial asli. Gunakan `.env.example` sebagai referensi.
@@ -80,7 +80,7 @@ SWAGGER_SERVER_URL=http://localhost:8080/manrisk/api
 
 Flyway akan otomatis menjalankan migrasi (`V1__create_risiko_table.sql`) saat startup.
 
-Aplikasi berjalan di **`http://localhost:8080/manrisk/api`**.
+Aplikasi berjalan di **`http://localhost:8080`**.
 
 ---
 
@@ -88,8 +88,8 @@ Aplikasi berjalan di **`http://localhost:8080/manrisk/api`**.
 
 Setelah aplikasi berjalan, buka:
 
-- **Swagger UI** → http://localhost:8080/manrisk/api/swagger-ui.html
-- **OpenAPI JSON** → http://localhost:8080/manrisk/api/v3/api-docs
+- **Swagger UI** → http://localhost:8080/swagger-ui.html
+- **OpenAPI JSON** → http://localhost:8080/v3/api-docs
 
 Klik **Authorize** pada Swagger UI lalu masukkan `X-Session-Id` hasil login ke
 Auth Service. Untuk deployment transisi, internal token hanya dipakai oleh BFF
@@ -103,7 +103,7 @@ divalidasi sebagai sesi aktif; validasi harus ditambahkan sebelum akses publik.
 
 ## 🔌 Endpoint
 
-Base path: `/manrisk/api`
+Base path aplikasi: `/`. Pada production, gateway menambahkan prefix `/api/v1/manrisk`.
 
 | Method | Endpoint | Deskripsi |
 | --- | --- | --- |
@@ -132,7 +132,7 @@ Risiko Operasional memakai endpoint terpisah:
 ### Contoh: buat risiko baru
 
 ```bash
-curl -X POST http://localhost:8080/manrisk/api/risiko-opd \
+curl -X POST http://localhost:8080/risiko-opd \
   -H "Content-Type: application/json" \
   -d '{
     "kode_opd": "1.01.01",

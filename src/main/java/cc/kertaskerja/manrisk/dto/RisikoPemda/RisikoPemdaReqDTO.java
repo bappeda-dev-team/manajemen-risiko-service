@@ -107,4 +107,8 @@ public class RisikoPemdaReqDTO {
     @JsonProperty("waktu_terjadi")
     @PastOrPresent
     private LocalDate waktuTerjadi;
+
+    @JsonProperty("revisi_dari")
+    @Size(max = 255)
+    private String revisiDari;
 }

@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "risiko_opd")
@@ -96,4 +97,19 @@ public class RisikoOpd extends BaseAuditable {
 
     @Column(name = "waktu_terjadi")
     private LocalDate waktuTerjadi;
+
+    @Column(name = "created_by")
+    private String createdBy;
+
+    @Column(name = "created_name")
+    private String createdName;
+
+    @Column(name = "created_jabatan")
+    private String createdJabatan;
+
+    @Column(name = "deleted_at")
+    private OffsetDateTime deletedAt;
+
+    @Column(name = "revisi_dari")
+    private String revisiDari;
 }

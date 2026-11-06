@@ -3,11 +3,9 @@ package cc.kertaskerja.manrisk.controller;
 import cc.kertaskerja.manrisk.dto.ApiResponse;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiReqDTO;
 import cc.kertaskerja.manrisk.dto.ai.GenerateAiResDTO;
-import cc.kertaskerja.manrisk.security.RisikoSessionAuthFilter;
 import cc.kertaskerja.manrisk.service.risiko.ai.RekomendasiRisikoService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,13 +22,10 @@ public class RekomendasiRisikoController {
     private final RekomendasiRisikoService rekomendasiRisikoService;
 
     @PostMapping("/generate-ai")
-    @Operation(summary = "Buat usulan AI risiko OPD, Pemda, atau Operasional",
-          description = "Memerlukan header X-Session-Id. Validasi sesi oleh Auth Service belum tersedia.")
+    @Operation(summary = "Buat usulan AI risiko OPD, Pemda, atau Operasional")
     public ResponseEntity<ApiResponse<GenerateAiResDTO>> generateAi(
-            @Valid @RequestBody GenerateAiReqDTO request,
-            HttpServletRequest servletRequest) {
-        String caller = (String) servletRequest.getAttribute(RisikoSessionAuthFilter.CALLER_ATTRIBUTE);
-        GenerateAiResDTO result = rekomendasiRisikoService.generate(caller, request);
+            @Valid @RequestBody GenerateAiReqDTO request) {
+        GenerateAiResDTO result = rekomendasiRisikoService.generate("anonymous", request);
         return ResponseEntity.ok(ApiResponse.success(result, "Rekomendasi berhasil dibuat"));
     }
 }

@@ -13,7 +13,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,11 +23,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/risiko-pemda")
-@RequiredArgsConstructor
 @Validated
 @Tag(name = "Manajemen Risiko Pemda")
 public class RisikoPemdaController {
     private final RisikoPemdaService risikoPemdaService;
+    public RisikoPemdaController(RisikoPemdaService risikoPemdaService) {
+        this.risikoPemdaService = risikoPemdaService;
+    }
 
     @GetMapping
     @Operation(summary = "Ambil semua data risiko Pemda")

@@ -5,6 +5,8 @@ import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaResDTO;
 import cc.kertaskerja.manrisk.entity.RisikoPemda;
 import cc.kertaskerja.manrisk.exception.RiskException;
 import cc.kertaskerja.manrisk.repository.RisikoPemdaRepository;
+import cc.kertaskerja.manrisk.repository.VerifikasiRisikoRepository;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +23,7 @@ public class RisikoPemdaService {
           "identifikasi", "analisis", "pengendalian", "pemantauan", "hasil-pemantauan");
 
     private final RisikoPemdaRepository risikoPemdaRepository;
+    private final VerifikasiRisikoRepository verifikasiRisikoRepository;
 
     public List<RisikoPemdaResDTO> getAllRisiko() {
         return risikoPemdaRepository.findAll().stream().map(this::toResDTO).toList();
@@ -31,8 +34,8 @@ public class RisikoPemdaService {
         int selectedYear = RisikoLaporanFilter.year(tahun);
         List<String> selectedCodes = RisikoLaporanFilter.sasaran(kodeSasaran);
         List<RisikoPemda> records = selectedCodes.isEmpty()
-              ? risikoPemdaRepository.findByTahunOrderByKodeSasaranPemdaAscIdAsc(selectedYear)
-              : risikoPemdaRepository.findByTahunAndKodeSasaranPemdaInOrderByKodeSasaranPemdaAscIdAsc(
+              ? risikoPemdaRepository.findVerifiedForLaporan(selectedYear)
+              : risikoPemdaRepository.findVerifiedForLaporanBySasaran(
                     selectedYear, selectedCodes);
         return records.stream().map(this::toResDTO).toList();
     }
@@ -75,6 +78,20 @@ public class RisikoPemdaService {
     }
 
     @Transactional
+    public RisikoPemdaResDTO createRisiko(RisikoPemdaReqDTO request, RiskPrincipal actor) {
+        requireLevel3(actor);
+        validateRevision(request.getRevisiDari(), actor);
+        RisikoPemda saved = toEntity(request);
+        saved.setKodeOpd(actor.kodeOpd());
+        saved.setCreatedBy(actor.id());
+        saved.setCreatedName(actor.nama());
+        saved.setCreatedJabatan(actor.jabatan());
+        saved = risikoPemdaRepository.saveAndFlush(saved);
+        saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
+        return toResDTO(risikoPemdaRepository.save(saved));
+    }
+
+    @Transactional
     public RisikoPemdaResDTO updateRisiko(Long id, RisikoPemdaReqDTO request) {
         RisikoPemda existing = findById(id);
         if (!Objects.equals(existing.getTahun(), request.getTahun())
@@ -88,8 +105,26 @@ public class RisikoPemdaService {
     }
 
     @Transactional
+    public RisikoPemdaResDTO updateRisiko(Long id, RisikoPemdaReqDTO request, RiskPrincipal actor) {
+        RisikoPemda existing = ownedEditable(id, actor, false);
+        if (!Objects.equals(existing.getTahun(), request.getTahun())
+              || !Objects.equals(normalized(existing.getKodeSasaranPemda()), normalized(request.getKodeSasaranPemda()))) {
+            throw new RiskException(409, "RISK_REFERENCE_IMMUTABLE", "Tahun dan kode sasaran Pemda tidak dapat diubah.");
+        }
+        applyMutableFields(existing, request);
+        return toResDTO(risikoPemdaRepository.save(existing));
+    }
+
+    @Transactional
     public void deleteRisiko(Long id) {
         risikoPemdaRepository.delete(findById(id));
+    }
+
+    @Transactional
+    public void deleteRisiko(Long id, RiskPrincipal actor) {
+        RisikoPemda existing = ownedEditable(id, actor, true);
+        existing.setDeletedAt(java.time.OffsetDateTime.now());
+        risikoPemdaRepository.save(existing);
     }
 
     private RisikoPemda findById(Long id) {
@@ -167,6 +202,7 @@ public class RisikoPemdaService {
         RisikoPemda risiko = RisikoPemda.builder()
               .tahun(request.getTahun())
               .kodeSasaranPemda(normalized(request.getKodeSasaranPemda()))
+              .revisiDari(normalized(request.getRevisiDari()))
               .build();
         applyMutableFields(risiko, request);
         return risiko;
@@ -221,5 +257,36 @@ public class RisikoPemdaService {
 
     private RiskException notFound(String message) {
         return new RiskException(404, "RISK_NOT_FOUND", message);
+    }
+
+    private RisikoPemda ownedEditable(Long id, RiskPrincipal actor, boolean deleting) {
+        requireLevel3(actor);
+        RisikoPemda risk = findById(id);
+        if (!actor.id().equals(risk.getCreatedBy()) || risk.getDeletedAt() != null) {
+            throw new RiskException(404, "RISK_NOT_FOUND", "Risiko tidak ditemukan.");
+        }
+        var verification = verifikasiRisikoRepository.findByKodeRisiko(risk.getKodeRisiko());
+        if (verification.isEmpty()) return risk;
+        String status = verification.get().getStatus();
+        boolean allowed = deleting ? "REJECTED".equals(status) : "VERIFIED".equals(status);
+        if (!allowed) throw new RiskException(409, "RISK_LOCKED", "Risiko tidak dapat diubah pada status saat ini.");
+        return risk;
+    }
+
+    private void validateRevision(String revisiDari, RiskPrincipal actor) {
+        String kode = normalized(revisiDari);
+        if (kode == null) return;
+        RisikoPemda parent = risikoPemdaRepository.findByKodeRisiko(kode)
+              .orElseThrow(() -> new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi tidak ditemukan."));
+        if (!actor.id().equals(parent.getCreatedBy()) || !Objects.equals(actor.kodeOpd(), parent.getKodeOpd())
+              || verifikasiRisikoRepository.findByKodeRisiko(parent.getKodeRisiko()).filter(v -> "REJECTED".equals(v.getStatus())).isEmpty()) {
+            throw new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi harus risiko ditolak milik pemohon pada OPD yang sama.");
+        }
+    }
+
+    private void requireLevel3(RiskPrincipal actor) {
+        if (!actor.hasRole("level_3")) {
+            throw new RiskException(403, "RISK_ACCESS_DENIED", "Akun tidak memiliki akses untuk membuat risiko.");
+        }
     }
 }

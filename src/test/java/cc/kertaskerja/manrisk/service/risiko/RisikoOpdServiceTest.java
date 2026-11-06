@@ -40,7 +40,7 @@ class RisikoOpdServiceTest {
         RisikoOpd record = risiko(7L, "RSK-OPD-0007");
         record.setRencanaTindakPengendalian("Evaluasi triwulanan");
         record.setRealisasiTindakPengendalian("Sudah dimulai");
-        when(risikoOpdRepository.findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc("OPD-001", 2026))
+        when(risikoOpdRepository.findVerifiedForLaporan("OPD-001", 2026))
               .thenReturn(List.of(record));
 
         List<RisikoOpdResDTO> response = risikoOpdService.getRisikoLaporan(2026, " OPD-001 ", null);
@@ -52,26 +52,26 @@ class RisikoOpdServiceTest {
         assertEquals(KODE_SASARAN, response.getFirst().getKodeSasaranOpd());
         assertEquals("Evaluasi triwulanan", response.getFirst().getRencanaTindakPengendalian());
         assertEquals("Sudah dimulai", response.getFirst().getRealisasiTindakPengendalian());
-        verify(risikoOpdRepository).findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc("OPD-001", 2026);
+        verify(risikoOpdRepository).findVerifiedForLaporan("OPD-001", 2026);
     }
 
     @Test
     void laporanSelectedSasaranUsesOneFilteredQueryAndDeduplicatesCodes() {
         List<String> selected = List.of("SAS-001", "SAS-003");
-        when(risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+        when(risikoOpdRepository.findVerifiedForLaporanBySasaran(
               "OPD-001", 2026, selected)).thenReturn(List.of(risiko(7L, "RSK-OPD-0007")));
 
         List<RisikoOpdResDTO> response = risikoOpdService.getRisikoLaporan(
               2026, "OPD-001", List.of(" SAS-001 ", "SAS-003", "SAS-001"));
 
         assertEquals(1, response.size());
-        verify(risikoOpdRepository).findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+        verify(risikoOpdRepository).findVerifiedForLaporanBySasaran(
               "OPD-001", 2026, selected);
     }
 
     @Test
     void laporanSelectedSasaranWithoutRisksReturnsEmptyList() {
-        when(risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+        when(risikoOpdRepository.findVerifiedForLaporanBySasaran(
               "OPD-001", 2026, List.of("SAS-EMPTY"))).thenReturn(List.of());
 
         assertEquals(List.of(), risikoOpdService.getRisikoLaporan(2026, "OPD-001", List.of("SAS-EMPTY")));

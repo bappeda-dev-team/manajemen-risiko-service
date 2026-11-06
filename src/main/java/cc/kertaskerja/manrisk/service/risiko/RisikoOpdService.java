@@ -5,6 +5,8 @@ import cc.kertaskerja.manrisk.dto.RisikoOpd.RisikoOpdResDTO;
 import cc.kertaskerja.manrisk.entity.RisikoOpd;
 import cc.kertaskerja.manrisk.exception.RiskException;
 import cc.kertaskerja.manrisk.repository.RisikoOpdRepository;
+import cc.kertaskerja.manrisk.repository.VerifikasiRisikoRepository;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +27,7 @@ public class RisikoOpdService {
     private static final Pattern LEGACY_KODE_RISIKO = Pattern.compile("RSK-(\\d{4,})");
 
     private final RisikoOpdRepository risikoOpdRepository;
+    private final VerifikasiRisikoRepository verifikasiRisikoRepository;
 
     public List<RisikoOpdResDTO> getAllRisiko() {
         return risikoOpdRepository.findAll().stream().map(this::toResDTO).toList();
@@ -36,8 +39,8 @@ public class RisikoOpdService {
         String selectedOpd = RisikoLaporanFilter.opd(kodeOpd);
         List<String> selectedCodes = RisikoLaporanFilter.sasaran(kodeSasaran);
         List<RisikoOpd> records = selectedCodes.isEmpty()
-              ? risikoOpdRepository.findByKodeOpdAndTahunOrderByKodeSasaranOpdAscIdAsc(selectedOpd, selectedYear)
-              : risikoOpdRepository.findByKodeOpdAndTahunAndKodeSasaranOpdInOrderByKodeSasaranOpdAscIdAsc(
+              ? risikoOpdRepository.findVerifiedForLaporan(selectedOpd, selectedYear)
+              : risikoOpdRepository.findVerifiedForLaporanBySasaran(
                     selectedOpd, selectedYear, selectedCodes);
         return records.stream().map(this::toResDTO).toList();
     }
@@ -81,6 +84,23 @@ public class RisikoOpdService {
     }
 
     @Transactional
+    public RisikoOpdResDTO createRisiko(RisikoOpdReqDTO request, RiskPrincipal actor) {
+        requireLevel3(actor);
+        if (!Objects.equals(normalized(request.getKodeOpd()), actor.kodeOpd())) {
+            throw new RiskException(403, "RISK_ACCESS_DENIED", "Kode OPD harus sesuai OPD pemohon.");
+        }
+        validateRevision(request.getRevisiDari(), actor, normalized(request.getKodeOpd()));
+        RisikoOpd saved = toEntity(request);
+        if (normalized(request.getRevisiDari()) != null) saved.setRevisiDari(canonicalKodeRisiko(request.getRevisiDari()));
+        saved.setCreatedBy(actor.id());
+        saved.setCreatedName(actor.nama());
+        saved.setCreatedJabatan(actor.jabatan());
+        saved = risikoOpdRepository.saveAndFlush(saved);
+        saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
+        return toResDTO(risikoOpdRepository.save(saved));
+    }
+
+    @Transactional
     public RisikoOpdResDTO updateRisiko(Long id, RisikoOpdReqDTO request) {
         RisikoOpd existing = findById(id);
         if (!Objects.equals(normalized(existing.getKodeOpd()), normalized(request.getKodeOpd()))
@@ -96,8 +116,27 @@ public class RisikoOpdService {
     }
 
     @Transactional
+    public RisikoOpdResDTO updateRisiko(Long id, RisikoOpdReqDTO request, RiskPrincipal actor) {
+        RisikoOpd existing = ownedEditable(id, actor, false);
+        if (!Objects.equals(normalized(existing.getKodeOpd()), normalized(request.getKodeOpd()))
+              || !Objects.equals(existing.getTahun(), request.getTahun())
+              || !Objects.equals(normalized(existing.getKodeSasaranOpd()), normalized(request.getKodeSasaranOpd()))) {
+            throw new RiskException(409, "RISK_REFERENCE_IMMUTABLE", "Kode OPD, tahun, dan kode sasaran OPD tidak dapat diubah.");
+        }
+        applyMutableFields(existing, request);
+        return toResDTO(risikoOpdRepository.save(existing));
+    }
+
+    @Transactional
     public void deleteRisiko(Long id) {
         risikoOpdRepository.delete(findById(id));
+    }
+
+    @Transactional
+    public void deleteRisiko(Long id, RiskPrincipal actor) {
+        RisikoOpd existing = ownedEditable(id, actor, true);
+        existing.setDeletedAt(java.time.OffsetDateTime.now());
+        risikoOpdRepository.save(existing);
     }
 
     private RisikoOpd findById(Long id) {
@@ -178,6 +217,7 @@ public class RisikoOpdService {
               .kodeOpd(normalized(request.getKodeOpd()))
               .tahun(request.getTahun())
               .kodeSasaranOpd(normalized(request.getKodeSasaranOpd()))
+              .revisiDari(normalized(request.getRevisiDari()))
               .build();
         applyMutableFields(risiko, request);
         return risiko;
@@ -238,5 +278,36 @@ public class RisikoOpdService {
 
     private RiskException notFound(String message) {
         return new RiskException(404, "RISK_NOT_FOUND", message);
+    }
+
+    private RisikoOpd ownedEditable(Long id, RiskPrincipal actor, boolean deleting) {
+        requireLevel3(actor);
+        RisikoOpd risk = findById(id);
+        if (!actor.id().equals(risk.getCreatedBy()) || risk.getDeletedAt() != null) {
+            throw new RiskException(404, "RISK_NOT_FOUND", "Risiko tidak ditemukan.");
+        }
+        var verification = verifikasiRisikoRepository.findByKodeRisiko(risk.getKodeRisiko());
+        if (verification.isEmpty()) return risk;
+        String status = verification.get().getStatus();
+        boolean allowed = deleting ? "REJECTED".equals(status) : "VERIFIED".equals(status);
+        if (!allowed) throw new RiskException(409, "RISK_LOCKED", "Risiko tidak dapat diubah pada status saat ini.");
+        return risk;
+    }
+
+    private void validateRevision(String revisiDari, RiskPrincipal actor, String kodeOpd) {
+        String kode = normalized(revisiDari);
+        if (kode == null) return;
+        RisikoOpd parent = risikoOpdRepository.findByKodeRisiko(canonicalKodeRisiko(kode))
+              .orElseThrow(() -> new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi tidak ditemukan."));
+        if (!actor.id().equals(parent.getCreatedBy()) || !Objects.equals(kodeOpd, parent.getKodeOpd())
+              || verifikasiRisikoRepository.findByKodeRisiko(parent.getKodeRisiko()).filter(v -> "REJECTED".equals(v.getStatus())).isEmpty()) {
+            throw new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi harus risiko ditolak milik pemohon pada OPD yang sama.");
+        }
+    }
+
+    private void requireLevel3(RiskPrincipal actor) {
+        if (!actor.hasRole("level_3")) {
+            throw new RiskException(403, "RISK_ACCESS_DENIED", "Akun tidak memiliki akses untuk membuat risiko.");
+        }
     }
 }

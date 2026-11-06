@@ -34,7 +34,7 @@ class RisikoPemdaServiceTest {
     void laporanAllSasaranUsesYearAndReturnsFullFlatRows() {
         RisikoPemda record = risiko(7L, "RSK-PEM-0007");
         record.setRealisasiTindakPengendalian("Selesai");
-        when(repository.findByTahunOrderByKodeSasaranPemdaAscIdAsc(2026)).thenReturn(List.of(record));
+        when(repository.findVerifiedForLaporan(2026)).thenReturn(List.of(record));
 
         List<RisikoPemdaResDTO> response = service.getRisikoLaporan(2026, null);
 
@@ -43,17 +43,17 @@ class RisikoPemdaServiceTest {
         assertEquals(KODE_SASARAN, response.getFirst().getKodeSasaranPemda());
         assertEquals(2026, response.getFirst().getTahun());
         assertEquals("Selesai", response.getFirst().getRealisasiTindakPengendalian());
-        verify(repository).findByTahunOrderByKodeSasaranPemdaAscIdAsc(2026);
+        verify(repository).findVerifiedForLaporan(2026);
     }
 
     @Test
     void laporanSelectedSasaranUsesOneFilteredQuery() {
-        when(repository.findByTahunAndKodeSasaranPemdaInOrderByKodeSasaranPemdaAscIdAsc(
+        when(repository.findVerifiedForLaporanBySasaran(
               2026, List.of("SAS-PEM-001", "SAS-PEM-003"))).thenReturn(List.of());
 
         assertEquals(List.of(), service.getRisikoLaporan(2026,
               List.of(" SAS-PEM-001 ", "SAS-PEM-003", "SAS-PEM-001")));
-        verify(repository).findByTahunAndKodeSasaranPemdaInOrderByKodeSasaranPemdaAscIdAsc(
+        verify(repository).findVerifiedForLaporanBySasaran(
               2026, List.of("SAS-PEM-001", "SAS-PEM-003"));
     }
 

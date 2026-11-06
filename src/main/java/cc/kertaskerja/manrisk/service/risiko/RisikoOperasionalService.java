@@ -5,6 +5,8 @@ import cc.kertaskerja.manrisk.dto.RisikoOperasional.RisikoOperasionalResDTO;
 import cc.kertaskerja.manrisk.entity.RisikoOperasional;
 import cc.kertaskerja.manrisk.exception.RiskException;
 import cc.kertaskerja.manrisk.repository.RisikoOperasionalRepository;
+import cc.kertaskerja.manrisk.repository.VerifikasiRisikoRepository;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,9 +24,16 @@ public class RisikoOperasionalService {
           "identifikasi", "analisis", "pengendalian", "pemantauan", "hasil-pemantauan");
 
     private final RisikoOperasionalRepository repository;
+    private final VerifikasiRisikoRepository verifikasiRisikoRepository;
 
     public List<RisikoOperasionalResDTO> getAllRisiko() {
         return repository.findAll().stream().map(this::toResDTO).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RisikoOperasionalResDTO> getRisikoLaporan(int tahun, String kodeOpd) {
+        return repository.findVerifiedForLaporan(RisikoLaporanFilter.opd(kodeOpd), RisikoLaporanFilter.year(tahun))
+              .stream().map(this::toResDTO).toList();
     }
 
     public RisikoOperasionalResDTO getRisikoByKodeRekin(String kodeRekin, String type) {
@@ -65,6 +74,22 @@ public class RisikoOperasionalService {
     }
 
     @Transactional
+    public RisikoOperasionalResDTO createRisiko(RisikoOperasionalReqDTO request, RiskPrincipal actor) {
+        requireLevel3(actor);
+        if (!Objects.equals(normalized(request.getKodeOpd()), actor.kodeOpd())) {
+            throw new RiskException(403, "RISK_ACCESS_DENIED", "Kode OPD harus sesuai OPD pemohon.");
+        }
+        validateRevision(request.getRevisiDari(), actor, normalized(request.getKodeOpd()));
+        RisikoOperasional saved = toEntity(request);
+        saved.setCreatedBy(actor.id());
+        saved.setCreatedName(actor.nama());
+        saved.setCreatedJabatan(actor.jabatan());
+        saved = repository.saveAndFlush(saved);
+        saved.setKodeRisiko(formatKodeRisiko(saved.getId()));
+        return toResDTO(repository.save(saved));
+    }
+
+    @Transactional
     public RisikoOperasionalResDTO updateRisiko(Long id, RisikoOperasionalReqDTO request) {
         RisikoOperasional existing = findById(id);
         if (!Objects.equals(existing.getTahun(), request.getTahun())
@@ -79,8 +104,28 @@ public class RisikoOperasionalService {
     }
 
     @Transactional
+    public RisikoOperasionalResDTO updateRisiko(Long id, RisikoOperasionalReqDTO request, RiskPrincipal actor) {
+        RisikoOperasional existing = ownedEditable(id, actor, false);
+        if (!Objects.equals(existing.getTahun(), request.getTahun())
+              || !Objects.equals(normalized(existing.getKodeRekin()), normalized(request.getKodeRekin()))
+              || !Objects.equals(normalized(existing.getKodeOpd()), normalized(request.getKodeOpd()))
+              || !Objects.equals(normalized(existing.getPegawaiId()), normalized(request.getPegawaiId()))) {
+            throw new RiskException(409, "RISK_REFERENCE_IMMUTABLE", "Tahun, kode rencana kinerja, kode OPD, dan pegawai tidak dapat diubah.");
+        }
+        applyMutableFields(existing, request);
+        return toResDTO(repository.save(existing));
+    }
+
+    @Transactional
     public void deleteRisiko(Long id) {
         repository.delete(findById(id));
+    }
+
+    @Transactional
+    public void deleteRisiko(Long id, RiskPrincipal actor) {
+        RisikoOperasional existing = ownedEditable(id, actor, true);
+        existing.setDeletedAt(java.time.OffsetDateTime.now());
+        repository.save(existing);
     }
 
     private RisikoOperasional findById(Long id) {
@@ -161,6 +206,7 @@ public class RisikoOperasionalService {
               .kodeRekin(normalized(request.getKodeRekin()))
               .kodeOpd(normalized(request.getKodeOpd()))
               .pegawaiId(normalized(request.getPegawaiId()))
+              .revisiDari(normalized(request.getRevisiDari()))
               .build();
         applyMutableFields(risiko, request);
         return risiko;
@@ -215,5 +261,36 @@ public class RisikoOperasionalService {
 
     private RiskException notFound(String message) {
         return new RiskException(404, "RISK_NOT_FOUND", message);
+    }
+
+    private RisikoOperasional ownedEditable(Long id, RiskPrincipal actor, boolean deleting) {
+        requireLevel3(actor);
+        RisikoOperasional risk = findById(id);
+        if (!actor.id().equals(risk.getCreatedBy()) || risk.getDeletedAt() != null) {
+            throw new RiskException(404, "RISK_NOT_FOUND", "Risiko tidak ditemukan.");
+        }
+        var verification = verifikasiRisikoRepository.findByKodeRisiko(risk.getKodeRisiko());
+        if (verification.isEmpty()) return risk;
+        String status = verification.get().getStatus();
+        boolean allowed = deleting ? "REJECTED".equals(status) : "VERIFIED".equals(status);
+        if (!allowed) throw new RiskException(409, "RISK_LOCKED", "Risiko tidak dapat diubah pada status saat ini.");
+        return risk;
+    }
+
+    private void validateRevision(String revisiDari, RiskPrincipal actor, String kodeOpd) {
+        String kode = normalized(revisiDari);
+        if (kode == null) return;
+        RisikoOperasional parent = repository.findByKodeRisiko(kode)
+              .orElseThrow(() -> new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi tidak ditemukan."));
+        if (!actor.id().equals(parent.getCreatedBy()) || !Objects.equals(kodeOpd, parent.getKodeOpd())
+              || verifikasiRisikoRepository.findByKodeRisiko(parent.getKodeRisiko()).filter(v -> "REJECTED".equals(v.getStatus())).isEmpty()) {
+            throw new RiskException(422, "RISK_REVISION_INVALID", "Risiko asal revisi harus risiko ditolak milik pemohon pada OPD yang sama.");
+        }
+    }
+
+    private void requireLevel3(RiskPrincipal actor) {
+        if (!actor.hasRole("level_3")) {
+            throw new RiskException(403, "RISK_ACCESS_DENIED", "Akun tidak memiliki akses untuk membuat risiko.");
+        }
     }
 }

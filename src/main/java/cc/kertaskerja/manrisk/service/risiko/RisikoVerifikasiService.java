@@ -83,6 +83,7 @@ public class RisikoVerifikasiService {
         if (row.deleted()) notFound(request.getKodeRisiko());
         if (verification(row).isPresent()) conflict("RISK_ALREADY_SUBMITTED", "Risiko sudah pernah diajukan.");
         validateComplete(row);
+        row = setPemohon(row, normalized(request.getPemohon().getId()), normalized(request.getPemohon().getNama()));
         VerifikasiRisiko verification = VerifikasiRisiko.builder()
               .kodeRisiko(row.kodeRisiko()).status(SUBMITTED).createdAt(OffsetDateTime.now()).build();
         switch (row.scope()) {
@@ -97,6 +98,30 @@ public class RisikoVerifikasiService {
             conflict("RISK_ALREADY_SUBMITTED", "Risiko sudah pernah diajukan.");
         }
         return detail(row, verification);
+    }
+
+    private RiskRow setPemohon(RiskRow row, String id, String nama) {
+        if (id == null || nama == null) invalid("Identitas pemohon wajib diisi.");
+        switch (row.scope()) {
+            case "OPERASIONAL" -> {
+                RisikoOperasional risk = (RisikoOperasional) row.source();
+                risk.setCreatedBy(id);
+                risk.setCreatedName(nama);
+            }
+            case "OPD" -> {
+                RisikoOpd risk = (RisikoOpd) row.source();
+                risk.setCreatedBy(id);
+                risk.setCreatedName(nama);
+            }
+            case "PEMDA" -> {
+                RisikoPemda risk = (RisikoPemda) row.source();
+                risk.setCreatedBy(id);
+                risk.setCreatedName(nama);
+            }
+            default -> throw new IllegalStateException("Jenis risiko tidak dikenal.");
+        }
+        return new RiskRow(row.scope(), row.id(), row.kodeRisiko(), row.kodeOpd(), row.tahun(), row.pernyataanRisiko(),
+              id, nama, row.createdJabatan(), row.revisiDari(), row.deleted(), row.createdAt(), row.source());
     }
 
     @Transactional

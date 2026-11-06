@@ -1,7 +1,9 @@
 package cc.kertaskerja.manrisk.service.risiko;
 
 import cc.kertaskerja.manrisk.dto.review.ReviewDecisionRequest;
+import cc.kertaskerja.manrisk.dto.review.SubmitVerificationRequest;
 import cc.kertaskerja.manrisk.dto.review.VerifikatorRequest;
+import cc.kertaskerja.manrisk.dto.review.PemohonRequest;
 import cc.kertaskerja.manrisk.entity.RisikoOpd;
 import cc.kertaskerja.manrisk.entity.VerifikasiRisiko;
 import cc.kertaskerja.manrisk.exception.RiskException;
@@ -48,6 +50,30 @@ class RisikoVerifikasiServiceTest {
         assertEquals("Budi Santoso", verification.getVerifikatorNama());
         assertEquals("Perjelas penyebab risiko.", verification.getCatatan());
         verify(verifikasiRepository).save(verification);
+    }
+
+    @Test
+    void submitStoresApplicantFromRequest() {
+        RisikoOpd risk = risk();
+        risk.setSkalaKemungkinan(3);
+        risk.setSkalaDampak(4);
+        risk.setRencanaTindakPengendalian("Perbaiki data");
+        risk.setKodePerangkatYangMenangani("OPD-001");
+        when(opdRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.of(risk));
+        when(verifikasiRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.empty());
+
+        SubmitVerificationRequest request = new SubmitVerificationRequest();
+        request.setKodeRisiko("RSK-OPD-0102");
+        PemohonRequest pemohon = new PemohonRequest();
+        pemohon.setId("19800001");
+        pemohon.setNama("Sinta Arnes");
+        request.setPemohon(pemohon);
+
+        var result = service.submit(request);
+
+        assertEquals("19800001", risk.getCreatedBy());
+        assertEquals("Sinta Arnes", risk.getCreatedName());
+        assertEquals("Sinta Arnes", ((java.util.Map<?, ?>) result.get("pemohon")).get("nama"));
     }
 
     @Test

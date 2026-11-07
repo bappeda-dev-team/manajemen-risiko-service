@@ -3,6 +3,8 @@ package cc.kertaskerja.manrisk.controller;
 import cc.kertaskerja.manrisk.dto.ApiResponse;
 import cc.kertaskerja.manrisk.dto.review.ReviewDecisionRequest;
 import cc.kertaskerja.manrisk.dto.review.SubmitVerificationRequest;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
+import cc.kertaskerja.manrisk.security.RiskPrincipalContext;
 import cc.kertaskerja.manrisk.service.risiko.RisikoVerifikasiService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,35 +35,40 @@ public class RisikoVerifikasiController {
     @GetMapping("/pengajuan-risiko")
     @Operation(summary = "Ambil seluruh pengajuan risiko milik pemohon")
     public ResponseEntity<ApiResponse<Map<String, Object>>> daftarPengajuan() {
-        return ResponseEntity.ok(ApiResponse.success(service.daftarPengajuan(), "Daftar pengajuan risiko"));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.success(actor == null ? service.daftarPengajuan() : service.daftarPengajuan(actor), "Daftar pengajuan risiko"));
     }
 
     @GetMapping("/pengajuan-risiko/{kodeRisiko}")
     @Operation(summary = "Ambil detail pengajuan risiko milik pemohon")
     public ResponseEntity<ApiResponse<Map<String, Object>>> detailPengajuan(
           @PathVariable @NotBlank @Size(max = 255) String kodeRisiko) {
-        return ResponseEntity.ok(ApiResponse.success(service.detailPengajuan(kodeRisiko), "Detail pengajuan risiko"));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.success(actor == null ? service.detailPengajuan(kodeRisiko) : service.detailPengajuan(kodeRisiko, actor), "Detail pengajuan risiko"));
     }
 
     @GetMapping("/verifikasi-risiko")
     @Operation(summary = "Ambil pengajuan risiko untuk verifikasi dalam OPD")
     public ResponseEntity<ApiResponse<Map<String, Object>>> daftarVerifikasi() {
-        return ResponseEntity.ok(ApiResponse.success(service.daftarVerifikasi(), "Daftar verifikasi risiko"));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.success(actor == null ? service.daftarVerifikasi() : service.daftarVerifikasi(actor), "Daftar verifikasi risiko"));
     }
 
     @GetMapping("/verifikasi-risiko/{kodeRisiko}")
     @Operation(summary = "Ambil detail risiko untuk verifikasi")
     public ResponseEntity<ApiResponse<Map<String, Object>>> detailVerifikasi(
           @PathVariable @NotBlank @Size(max = 255) String kodeRisiko) {
-        return ResponseEntity.ok(ApiResponse.success(service.detailVerifikasi(kodeRisiko), "Detail verifikasi risiko"));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.success(actor == null ? service.detailVerifikasi(kodeRisiko) : service.detailVerifikasi(kodeRisiko, actor), "Detail verifikasi risiko"));
     }
 
     @PostMapping("/verifikasi-risiko")
     @Operation(summary = "Ajukan risiko draf untuk diverifikasi")
     public ResponseEntity<ApiResponse<Map<String, Object>>> submit(
           @Valid @RequestBody SubmitVerificationRequest body) {
+        RiskPrincipal actor = RiskPrincipalContext.current();
         return ResponseEntity.status(HttpStatus.CREATED)
-              .body(new ApiResponse<>(HttpStatus.CREATED.value(), "Risiko berhasil diajukan", service.submit(body)));
+              .body(new ApiResponse<>(HttpStatus.CREATED.value(), "Risiko berhasil diajukan", actor == null ? service.submit(body) : service.submit(body, actor)));
     }
 
     @PatchMapping("/verifikasi-risiko/{kodeRisiko}/keputusan")
@@ -69,7 +76,8 @@ public class RisikoVerifikasiController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> keputusan(
           @PathVariable @NotBlank @Size(max = 255) String kodeRisiko,
           @Valid @RequestBody ReviewDecisionRequest body) {
-        Map<String, Object> result = service.decide(kodeRisiko, body);
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        Map<String, Object> result = actor == null ? service.decide(kodeRisiko, body) : service.decide(kodeRisiko, body, actor);
         String status = (String) result.get("status");
         String message = "VERIFIED".equals(status) ? "Risiko berhasil diverifikasi" : "Risiko ditolak";
         return ResponseEntity.ok(ApiResponse.success(result, message));

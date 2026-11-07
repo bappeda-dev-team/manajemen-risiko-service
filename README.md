@@ -91,19 +91,17 @@ Setelah aplikasi berjalan, buka:
 - **Swagger UI** → http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON** → http://localhost:8080/v3/api-docs
 
-Klik **Authorize** pada Swagger UI lalu masukkan `X-Session-Id` hasil login ke
-Auth Service. Untuk deployment transisi, internal token hanya dipakai oleh BFF
-lama di sisi server dan tidak boleh dimasukkan ke browser.
-
-Saat ini backend risiko hanya memeriksa keberadaan header `X-Session-Id` karena
-Auth Service Mahulu tidak menyediakan endpoint `/user-info`. Nilai header belum
-divalidasi sebagai sesi aktif; validasi harus ditambahkan sebelum akses publik.
+Backend selalu memakai cookie HttpOnly Mahulu. Browser mengirim cookie tersebut
+melalui gateway, lalu backend memvalidasi sesi ke `GET /user/user-info`. Jangan
+memasukkan cookie atau `X-Session-Id` ke Swagger.
 
 ---
 
 ## 🔌 Endpoint
 
-Base path aplikasi: `/`. Pada production, gateway menambahkan prefix `/api/v1/manrisk`.
+Base path aplikasi dan publik: `/`. Production memakai route seperti
+`https://api-mahulu.kertaskerja.cc/risiko-opd`; gateway meneruskan path yang sama
+ke Manrisk internal.
 
 | Method | Endpoint | Deskripsi |
 | --- | --- | --- |

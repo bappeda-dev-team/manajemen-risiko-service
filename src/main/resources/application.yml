@@ -55,10 +55,6 @@ kertaskerja:
       - https://localhost:3000
       - https://manrisk-test.zeabur.app
       - https://manrisk-service.zeabur.app
-  security:
-    mode: none
-
-
 server:
   port: ${SERVER_PORT:8080}
   tomcat:

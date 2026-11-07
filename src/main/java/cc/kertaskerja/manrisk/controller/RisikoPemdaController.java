@@ -4,6 +4,8 @@ import cc.kertaskerja.manrisk.dto.ApiResponse;
 import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoPemda.RisikoPemdaResDTO;
 import cc.kertaskerja.manrisk.service.risiko.RisikoPemdaService;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
+import cc.kertaskerja.manrisk.security.RiskPrincipalContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.enums.ParameterIn;
@@ -73,8 +75,9 @@ public class RisikoPemdaController {
     @Operation(summary = "Simpan risiko Pemda baru")
     public ResponseEntity<ApiResponse<RisikoPemdaResDTO>> create(
           @Valid @RequestBody RisikoPemdaReqDTO request) {
+        RiskPrincipal actor = RiskPrincipalContext.current();
         return ResponseEntity.status(HttpStatus.CREATED)
-              .body(ApiResponse.created(risikoPemdaService.createRisiko(request)));
+              .body(ApiResponse.created(actor == null ? risikoPemdaService.createRisiko(request) : risikoPemdaService.createRisiko(request, actor)));
     }
 
     @PutMapping("/{id}")
@@ -82,13 +85,15 @@ public class RisikoPemdaController {
     public ResponseEntity<ApiResponse<RisikoPemdaResDTO>> update(
           @PathVariable @Min(1) Long id,
           @Valid @RequestBody RisikoPemdaReqDTO request) {
-        return ResponseEntity.ok(ApiResponse.updated(risikoPemdaService.updateRisiko(id, request)));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.updated(actor == null ? risikoPemdaService.updateRisiko(id, request) : risikoPemdaService.updateRisiko(id, request, actor)));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Hapus risiko Pemda berdasarkan ID")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable @Min(1) Long id) {
-        risikoPemdaService.deleteRisiko(id);
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        if (actor == null) risikoPemdaService.deleteRisiko(id); else risikoPemdaService.deleteRisiko(id, actor);
         return ResponseEntity.ok(ApiResponse.deleted());
     }
 }

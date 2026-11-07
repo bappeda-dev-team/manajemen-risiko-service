@@ -6,11 +6,12 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import cc.kertaskerja.manrisk.config.KertaskerjaProperties;
+import cc.kertaskerja.manrisk.config.MahuluAuthProperties;
 import cc.kertaskerja.manrisk.config.RisikoAiProperties;
 
 @SpringBootApplication
 @EnableJpaAuditing
-@EnableConfigurationProperties({KertaskerjaProperties.class, RisikoAiProperties.class})
+@EnableConfigurationProperties({KertaskerjaProperties.class, MahuluAuthProperties.class, RisikoAiProperties.class})
 public class ManriskApplication {
 
 	public static void main(String[] args) {

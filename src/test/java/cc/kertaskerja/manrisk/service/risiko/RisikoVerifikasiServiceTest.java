@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -104,6 +105,38 @@ class RisikoVerifikasiServiceTest {
         assertEquals("U-BUDI", verification.getVerifikatorId());
     }
 
+    @Test
+    void submitUsesAuthenticatedApplicantInsteadOfRequestBody() {
+        RisikoOpd risk = risk();
+        risk.setSkalaKemungkinan(3);
+        risk.setSkalaDampak(4);
+        risk.setRencanaTindakPengendalian("Perbaiki data");
+        risk.setKodePerangkatYangMenangani("OPD-001");
+        when(opdRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.of(risk));
+        when(verifikasiRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.empty());
+        SubmitVerificationRequest request = new SubmitVerificationRequest();
+        request.setKodeRisiko("RSK-OPD-0102");
+
+        service.submit(request, principal("U-ANISA", "level_3"));
+
+        assertEquals("U-ANISA", risk.getCreatedBy());
+        verify(verifikasiRepository).saveAndFlush(org.mockito.ArgumentMatchers.any(VerifikasiRisiko.class));
+    }
+
+    @Test
+    void authenticatedDecisionStoresSessionVerifier() {
+        VerifikasiRisiko verification = VerifikasiRisiko.builder()
+              .id(42L).kodeRisiko("RSK-OPD-0102").status("SUBMITTED").risikoOpd(risk()).build();
+        when(verifikasiRepository.findLockedByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.of(verification));
+        ReviewDecisionRequest request = new ReviewDecisionRequest();
+        request.setStatus("VERIFIED");
+
+        service.decide("RSK-OPD-0102", request, principal("U-BUDI", "level_2"));
+
+        assertEquals("U-BUDI", verification.getVerifikatorId());
+        assertEquals("Budi", verification.getVerifikatorNama());
+    }
+
     private RisikoOpd risk() {
         return RisikoOpd.builder().id(102L).kodeRisiko("RSK-OPD-0102").kodeOpd("OPD-001")
               .createdBy("U-ANISA").createdName("Anisa").tahun(2026)
@@ -115,5 +148,9 @@ class RisikoVerifikasiServiceTest {
         value.setId("U-BUDI");
         value.setNama("Budi Santoso");
         return value;
+    }
+
+    private cc.kertaskerja.manrisk.security.RiskPrincipal principal(String id, String role) {
+        return new cc.kertaskerja.manrisk.security.RiskPrincipal(id, "Budi", null, "OPD-001", Set.of(role));
     }
 }

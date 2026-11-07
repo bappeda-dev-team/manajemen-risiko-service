@@ -4,6 +4,8 @@ import cc.kertaskerja.manrisk.dto.ApiResponse;
 import cc.kertaskerja.manrisk.dto.RisikoOperasional.RisikoOperasionalReqDTO;
 import cc.kertaskerja.manrisk.dto.RisikoOperasional.RisikoOperasionalResDTO;
 import cc.kertaskerja.manrisk.service.risiko.RisikoOperasionalService;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
+import cc.kertaskerja.manrisk.security.RiskPrincipalContext;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -72,8 +74,9 @@ public class RisikoOperasionalController {
     @Operation(summary = "Simpan risiko Operasional baru")
     public ResponseEntity<ApiResponse<RisikoOperasionalResDTO>> create(
           @Valid @RequestBody RisikoOperasionalReqDTO request) {
+        RiskPrincipal actor = RiskPrincipalContext.current();
         return ResponseEntity.status(HttpStatus.CREATED)
-              .body(ApiResponse.created(risikoOperasionalService.createRisiko(request)));
+              .body(ApiResponse.created(actor == null ? risikoOperasionalService.createRisiko(request) : risikoOperasionalService.createRisiko(request, actor)));
     }
 
     @PutMapping("/{id}")
@@ -81,13 +84,15 @@ public class RisikoOperasionalController {
     public ResponseEntity<ApiResponse<RisikoOperasionalResDTO>> update(
           @PathVariable @Min(1) Long id,
           @Valid @RequestBody RisikoOperasionalReqDTO request) {
-        return ResponseEntity.ok(ApiResponse.updated(risikoOperasionalService.updateRisiko(id, request)));
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        return ResponseEntity.ok(ApiResponse.updated(actor == null ? risikoOperasionalService.updateRisiko(id, request) : risikoOperasionalService.updateRisiko(id, request, actor)));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Hapus risiko Operasional berdasarkan ID")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable @Min(1) Long id) {
-        risikoOperasionalService.deleteRisiko(id);
+        RiskPrincipal actor = RiskPrincipalContext.current();
+        if (actor == null) risikoOperasionalService.deleteRisiko(id); else risikoOperasionalService.deleteRisiko(id, actor);
         return ResponseEntity.ok(ApiResponse.deleted());
     }
 }

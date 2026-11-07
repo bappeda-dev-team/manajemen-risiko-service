@@ -8,6 +8,7 @@ import java.util.Set;
  */
 public record RiskPrincipal(String id, String nama, String jabatan, String kodeOpd, Set<String> roles) {
     public boolean hasRole(String role) {
-        return roles != null && roles.contains(role);
+        return roles != null && role != null && roles.stream()
+              .anyMatch(value -> role.equalsIgnoreCase(value == null ? null : value.trim()));
     }
 }

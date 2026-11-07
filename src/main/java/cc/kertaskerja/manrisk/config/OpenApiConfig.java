@@ -1,6 +1,5 @@
 package cc.kertaskerja.manrisk.config;
 
-import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.servers.Server;
@@ -21,11 +20,11 @@ public class OpenApiConfig {
                     .description("Pejabat Pengelola Informasi dan Dokumentasi Kabupaten Mahakam Ulu"))
               .servers(List.of(
                     new Server()
-                          .url("http://localhost:8080/manrisk/api")
+                          .url("http://localhost:8080")
                           .description("Development server"),
                     new Server()
-                          .url("https://manrisk-service.zeabur.app/manrisk/api")
-                          .description("Production server")
+                          .url("https://api-mahulu.kertaskerja.cc")
+                          .description("Production gateway")
               ));
     }
 }

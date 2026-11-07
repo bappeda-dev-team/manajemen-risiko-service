@@ -11,6 +11,7 @@ import cc.kertaskerja.manrisk.repository.RisikoOpdRepository;
 import cc.kertaskerja.manrisk.repository.RisikoOperasionalRepository;
 import cc.kertaskerja.manrisk.repository.RisikoPemdaRepository;
 import cc.kertaskerja.manrisk.repository.VerifikasiRisikoRepository;
+import cc.kertaskerja.manrisk.security.RiskPrincipal;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -50,9 +52,29 @@ public class RisikoVerifikasiService {
     }
 
     @Transactional(readOnly = true)
+    public Map<String, Object> daftarPengajuan(RiskPrincipal actor) {
+        requireLevel3(actor);
+        List<RiskRow> rows = new ArrayList<>();
+        operasionalRepository.findByCreatedByAndDeletedAtIsNullOrderByCreatedAtDesc(actor.id()).forEach(r -> rows.add(operasional(r)));
+        opdRepository.findByCreatedByAndDeletedAtIsNullOrderByCreatedAtDesc(actor.id()).forEach(r -> rows.add(opd(r)));
+        pemdaRepository.findByCreatedByAndDeletedAtIsNullOrderByCreatedAtDesc(actor.id()).forEach(r -> rows.add(pemda(r)));
+        rows.sort(Comparator.comparing(RiskRow::createdAt, Comparator.nullsLast(Comparator.reverseOrder()))
+              .thenComparing(RiskRow::kodeRisiko));
+        return Map.of("daftar_pengajuan", rows.stream().map(this::summary).toList());
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> detailPengajuan(String kodeRisiko) {
         RiskRow row = find(kodeRisiko);
         if (row.deleted()) notFound(kodeRisiko);
+        return detail(row);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> detailPengajuan(String kodeRisiko, RiskPrincipal actor) {
+        requireLevel3(actor);
+        RiskRow row = find(kodeRisiko);
+        if (row.deleted() || !owns(row, actor)) notFound(kodeRisiko);
         return detail(row);
     }
 
@@ -71,9 +93,33 @@ public class RisikoVerifikasiService {
     }
 
     @Transactional(readOnly = true)
+    public Map<String, Object> daftarVerifikasi(RiskPrincipal actor) {
+        requireLevel2(actor);
+        List<RiskRow> rows = new ArrayList<>();
+        operasionalRepository.findAll().stream().filter(r -> r.getDeletedAt() == null).forEach(r -> rows.add(operasional(r)));
+        opdRepository.findAll().stream().filter(r -> r.getDeletedAt() == null).forEach(r -> rows.add(opd(r)));
+        pemdaRepository.findAll().stream().filter(r -> r.getDeletedAt() == null).forEach(r -> rows.add(pemda(r)));
+        List<Map<String, Object>> daftar = rows.stream()
+              .filter(r -> verification(r).isPresent())
+              .filter(r -> reviewerCanAccess(r, actor))
+              .sorted(Comparator.comparing((RiskRow r) -> verification(r).orElseThrow().getCreatedAt()).reversed()
+                    .thenComparing(RiskRow::kodeRisiko))
+              .map(this::summary).toList();
+        return Map.of("daftar_verifikasi", daftar);
+    }
+
+    @Transactional(readOnly = true)
     public Map<String, Object> detailVerifikasi(String kodeRisiko) {
         RiskRow row = find(kodeRisiko);
         if (row.deleted() || verification(row).isEmpty()) notFound(kodeRisiko);
+        return detail(row);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Object> detailVerifikasi(String kodeRisiko, RiskPrincipal actor) {
+        requireLevel2(actor);
+        RiskRow row = find(kodeRisiko);
+        if (row.deleted() || verification(row).isEmpty() || !reviewerCanAccess(row, actor)) notFound(kodeRisiko);
         return detail(row);
     }
 
@@ -83,7 +129,22 @@ public class RisikoVerifikasiService {
         if (row.deleted()) notFound(request.getKodeRisiko());
         if (verification(row).isPresent()) conflict("RISK_ALREADY_SUBMITTED", "Risiko sudah pernah diajukan.");
         validateComplete(row);
+        if (request.getPemohon() == null) invalid("Identitas pemohon wajib diisi.");
         row = setPemohon(row, normalized(request.getPemohon().getId()), normalized(request.getPemohon().getNama()));
+        return saveSubmission(row);
+    }
+
+    @Transactional
+    public Map<String, Object> submit(SubmitVerificationRequest request, RiskPrincipal actor) {
+        requireLevel3(actor);
+        RiskRow row = find(request.getKodeRisiko());
+        if (row.deleted() || !owns(row, actor)) notFound(request.getKodeRisiko());
+        if (verification(row).isPresent()) conflict("RISK_ALREADY_SUBMITTED", "Risiko sudah pernah diajukan.");
+        validateComplete(row);
+        return saveSubmission(row);
+    }
+
+    private Map<String, Object> saveSubmission(RiskRow row) {
         VerifikasiRisiko verification = VerifikasiRisiko.builder()
               .kodeRisiko(row.kodeRisiko()).status(SUBMITTED).createdAt(OffsetDateTime.now()).build();
         switch (row.scope()) {
@@ -126,6 +187,18 @@ public class RisikoVerifikasiService {
 
     @Transactional
     public Map<String, Object> decide(String kodeRisiko, ReviewDecisionRequest request) {
+        if (request.getVerifikator() == null) invalid("Identitas verifikator wajib diisi.");
+        return decide(kodeRisiko, request, normalized(request.getVerifikator().getId()), normalized(request.getVerifikator().getNama()), null);
+    }
+
+    @Transactional
+    public Map<String, Object> decide(String kodeRisiko, ReviewDecisionRequest request, RiskPrincipal actor) {
+        requireLevel2(actor);
+        return decide(kodeRisiko, request, actor.id(), actor.nama(), actor);
+    }
+
+    private Map<String, Object> decide(String kodeRisiko, ReviewDecisionRequest request, String verifikatorId,
+                                       String verifikatorNama, RiskPrincipal actor) {
         String target = normalizedDecision(request.getStatus());
         String catatan = normalized(request.getCatatan());
         if (REJECTED.equals(target) && catatan == null) invalid("Catatan penolakan wajib diisi.");
@@ -134,10 +207,12 @@ public class RisikoVerifikasiService {
               .orElseThrow(() -> new RiskException(404, "RISK_NOT_FOUND", "Risiko tidak ditemukan."));
         RiskRow row = fromVerification(verification);
         if (row.deleted()) notFound(kodeRisiko);
+        if (actor != null && (!reviewerCanAccess(row, actor) || owns(row, actor))) notFound(kodeRisiko);
         if (!SUBMITTED.equals(verification.getStatus())) conflict("RISK_DECISION_ALREADY_MADE", "Keputusan verifikasi sudah diambil.");
         verification.setStatus(target);
-        verification.setVerifikatorId(normalized(request.getVerifikator().getId()));
-        verification.setVerifikatorNama(normalized(request.getVerifikator().getNama()));
+        if (verifikatorId == null || verifikatorNama == null) invalid("Identitas verifikator wajib diisi.");
+        verification.setVerifikatorId(verifikatorId);
+        verification.setVerifikatorNama(verifikatorNama);
         verification.setCatatan(catatan);
         verifikasiRepository.save(verification);
         return detail(row, verification);
@@ -310,6 +385,16 @@ public class RisikoVerifikasiService {
     }
 
     private static boolean hasText(String value) { return normalized(value) != null; }
+    private static boolean owns(RiskRow row, RiskPrincipal actor) { return Objects.equals(row.createdBy(), actor.id()); }
+    private static boolean reviewerCanAccess(RiskRow row, RiskPrincipal actor) {
+        return "PEMDA".equals(row.scope()) || Objects.equals(row.kodeOpd(), actor.kodeOpd());
+    }
+    private static void requireLevel2(RiskPrincipal actor) {
+        if (!actor.hasRole("level_2")) throw new RiskException(403, "RISK_ACCESS_DENIED", "Akun tidak memiliki akses untuk memverifikasi risiko.");
+    }
+    private static void requireLevel3(RiskPrincipal actor) {
+        if (!actor.hasRole("level_3")) throw new RiskException(403, "RISK_ACCESS_DENIED", "Akun tidak memiliki akses untuk mengajukan risiko.");
+    }
     private static void notFound(String kode) { throw new RiskException(404, "RISK_NOT_FOUND", "Risiko tidak ditemukan."); }
     private static void conflict(String code, String message) { throw new RiskException(409, code, message); }
     private static void invalid(String message) { throw new RiskException(422, "RISK_REVIEW_INVALID", message); }

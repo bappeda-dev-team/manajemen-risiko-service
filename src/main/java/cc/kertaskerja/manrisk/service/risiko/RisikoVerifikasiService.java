@@ -141,6 +141,10 @@ public class RisikoVerifikasiService {
         if (row.deleted() || !owns(row, actor)) notFound(request.getKodeRisiko());
         if (verification(row).isPresent()) conflict("RISK_ALREADY_SUBMITTED", "Risiko sudah pernah diajukan.");
         validateComplete(row);
+        if (request.getPemohon() == null) invalid("Identitas pemohon wajib diisi.");
+        String pemohonId = normalized(request.getPemohon().getId());
+        if (!Objects.equals(pemohonId, actor.id())) invalid("Identitas pemohon tidak sesuai dengan sesi.");
+        row = setPemohon(row, pemohonId, normalized(request.getPemohon().getNama()));
         return saveSubmission(row);
     }
 
@@ -162,22 +166,25 @@ public class RisikoVerifikasiService {
     }
 
     private RiskRow setPemohon(RiskRow row, String id, String nama) {
-        if (id == null || nama == null) invalid("Identitas pemohon wajib diisi.");
+        if (id == null || nama == null || id.length() > 128 || nama.length() > 255) invalid("Identitas pemohon tidak valid.");
         switch (row.scope()) {
             case "OPERASIONAL" -> {
                 RisikoOperasional risk = (RisikoOperasional) row.source();
                 risk.setCreatedBy(id);
                 risk.setCreatedName(nama);
+                operasionalRepository.saveAndFlush(risk);
             }
             case "OPD" -> {
                 RisikoOpd risk = (RisikoOpd) row.source();
                 risk.setCreatedBy(id);
                 risk.setCreatedName(nama);
+                opdRepository.saveAndFlush(risk);
             }
             case "PEMDA" -> {
                 RisikoPemda risk = (RisikoPemda) row.source();
                 risk.setCreatedBy(id);
                 risk.setCreatedName(nama);
+                pemdaRepository.saveAndFlush(risk);
             }
             default -> throw new IllegalStateException("Jenis risiko tidak dikenal.");
         }

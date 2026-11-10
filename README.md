@@ -67,6 +67,7 @@ DB_URL=jdbc:postgresql://localhost:5432/manajemen_risiko
 DB_USERNAME=your_db_username
 DB_PASSWORD=your_db_password
 SERVER_PORT=8080
+MANRISK_AUTH_MODE=dev-open
 SWAGGER_SERVER_URL=http://localhost:8080
 ```
 
@@ -91,17 +92,20 @@ Setelah aplikasi berjalan, buka:
 - **Swagger UI** → http://localhost:8080/swagger-ui.html
 - **OpenAPI JSON** → http://localhost:8080/v3/api-docs
 
-Backend selalu memakai cookie HttpOnly Mahulu. Browser mengirim cookie tersebut
-melalui gateway, lalu backend memvalidasi sesi ke `GET /user/user-info`. Jangan
-memasukkan cookie atau `X-Session-Id` ke Swagger.
+Mode auth default adalah `dev-open` untuk development dengan data uji. Mode ini
+mengizinkan request tanpa cookie dan tidak membatasi aksi berdasarkan peran atau
+OPD. Karena URL service dapat diakses langsung, siapa pun yang mengetahui URL
+dapat membaca dan mengubah data risiko. Di Zeabur, set `MANRISK_AUTH_MODE=mahulu`
+untuk mengaktifkan validasi sesi saat gateway Mahulu sudah meneruskan cookie.
+Pada mode `mahulu`, backend memvalidasi cookie ke `GET /user/user-info`.
 
 ---
 
 ## 🔌 Endpoint
 
-Base path aplikasi dan publik: `/`. Production memakai route seperti
-`https://api-mahulu.kertaskerja.cc/risiko-opd`; gateway meneruskan path yang sama
-ke Manrisk internal.
+Controller memakai path tanpa prefix, misalnya `/risiko-opd`. Jika deployment
+Zeabur mengatur context path `/manrisk/api`, URL publik perlu memakai prefix
+tersebut. Pada mode `mahulu`, gateway perlu meneruskan cookie ke Manrisk.
 
 | Method | Endpoint | Deskripsi |
 | --- | --- | --- |

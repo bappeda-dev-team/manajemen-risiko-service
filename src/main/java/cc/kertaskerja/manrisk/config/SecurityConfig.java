@@ -23,7 +23,8 @@ import java.util.List;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(
+    @ConditionalOnProperty(prefix = "manrisk.auth", name = "mode", havingValue = "mahulu")
+    SecurityFilterChain mahuluSecurityFilterChain(
           HttpSecurity http,
           MahuluSessionClient sessionClient,
           ObjectMapper objectMapper) throws Exception {
@@ -36,6 +37,17 @@ public class SecurityConfig {
                     .anyRequest().authenticated())
               .addFilterBefore(new MahuluCookieAuthenticationFilter(sessionClient, objectMapper),
                     UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    @ConditionalOnProperty(prefix = "manrisk.auth", name = "mode", havingValue = "dev-open", matchIfMissing = true)
+    SecurityFilterChain devOpenSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+              .cors(Customizer.withDefaults())
+              .csrf(AbstractHttpConfigurer::disable)
+              .authorizeHttpRequests(auth -> auth.anyRequest().permitAll());
 
         return http.build();
     }

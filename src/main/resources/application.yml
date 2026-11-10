@@ -63,6 +63,7 @@ server:
 # Generate AI is disabled until its server-only variables are supplied manually.
 manrisk:
   auth:
+    mode: ${MANRISK_AUTH_MODE:dev-open}
     base-url: ${AUTH_API_URL:}
     connect-timeout-seconds: ${MANRISK_AUTH_CONNECT_TIMEOUT_SECONDS:3}
     request-timeout-seconds: ${MANRISK_AUTH_REQUEST_TIMEOUT_SECONDS:3}

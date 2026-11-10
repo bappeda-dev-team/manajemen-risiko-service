@@ -16,5 +16,3 @@ kertaskerja:
     enabled: true
     allowed-hosts:
       - http://localhost:3000
-  security:
-    mode: none

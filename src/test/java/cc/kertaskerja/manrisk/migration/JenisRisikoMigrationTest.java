@@ -47,7 +47,8 @@ class JenisRisikoMigrationTest {
             try (ResultSet inserted = statement.executeQuery(
                   "INSERT INTO jenis_risiko (nama) VALUES ('Risiko Baru') RETURNING id")) {
                 assertTrue(inserted.next());
-                assertEquals(8L, inserted.getLong("id"));
+                // PostgreSQL tetap menaikkan sequence saat INSERT duplikat gagal.
+                assertTrue(inserted.getLong("id") > 7L);
             }
         }
     }

@@ -1,5 +1,6 @@
 package cc.kertaskerja.manrisk.service.risiko;
 
+import cc.kertaskerja.manrisk.controller.RisikoVerifikasiController;
 import cc.kertaskerja.manrisk.dto.review.ReviewDecisionRequest;
 import cc.kertaskerja.manrisk.dto.review.SubmitVerificationRequest;
 import cc.kertaskerja.manrisk.dto.review.VerifikatorRequest;
@@ -18,16 +19,24 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
 class RisikoVerifikasiServiceTest {
@@ -39,8 +48,11 @@ class RisikoVerifikasiServiceTest {
 
     @Test
     void rejectStoresReviewerAndSingleNote() {
+        RisikoOpd risk = risk();
+        risk.setPerangkatYangMenangani("Dinas Pendidikan");
+        risk.setKodePerangkatYangMenangani("OPD-PENDIDIKAN");
         VerifikasiRisiko verification = VerifikasiRisiko.builder()
-              .id(42L).kodeRisiko("RSK-OPD-0102").status("SUBMITTED").risikoOpd(risk()).build();
+              .id(42L).kodeRisiko("RSK-OPD-0102").status("SUBMITTED").risikoOpd(risk).build();
         when(verifikasiRepository.findLockedByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.of(verification));
 
         ReviewDecisionRequest request = new ReviewDecisionRequest();
@@ -54,6 +66,7 @@ class RisikoVerifikasiServiceTest {
         assertEquals("U-BUDI", verification.getVerifikatorId());
         assertEquals("Budi Santoso", verification.getVerifikatorNama());
         assertEquals("Perjelas penyebab risiko.", verification.getCatatan());
+        assertHandlingFields(result, "Dinas Pendidikan", "OPD-PENDIDIKAN");
         verify(verifikasiRepository).save(verification);
     }
 
@@ -63,6 +76,7 @@ class RisikoVerifikasiServiceTest {
         risk.setSkalaKemungkinan(3);
         risk.setSkalaDampak(4);
         risk.setRencanaTindakPengendalian("Perbaiki data");
+        risk.setPerangkatYangMenangani("Dinas Pendidikan");
         risk.setKodePerangkatYangMenangani("OPD-001");
         when(opdRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.of(risk));
         when(verifikasiRepository.findByKodeRisiko("RSK-OPD-0102")).thenReturn(Optional.empty());
@@ -79,6 +93,7 @@ class RisikoVerifikasiServiceTest {
         assertEquals("19800001", risk.getCreatedBy());
         assertEquals("Sinta Arnes", risk.getCreatedName());
         assertEquals("Sinta Arnes", ((java.util.Map<?, ?>) result.get("pemohon")).get("nama"));
+        assertHandlingFields(result, "Dinas Pendidikan", "OPD-001");
         verify(opdRepository).saveAndFlush(risk);
     }
 
@@ -215,6 +230,82 @@ class RisikoVerifikasiServiceTest {
 
         assertEquals("U-BUDI", verification.getVerifikatorId());
         assertEquals("Budi", verification.getVerifikatorNama());
+    }
+
+    @Test
+    void opdDetailsReturnHandlingNameAndCodes() {
+        RisikoOpd risk = risk();
+        risk.setPerangkatYangMenangani("Dinas Pendidikan");
+        risk.setKodePerangkatYangMenangani("OPD-PENDIDIKAN");
+        when(opdRepository.findByKodeRisiko(risk.getKodeRisiko())).thenReturn(Optional.of(risk));
+
+        assertHandlingFieldsInBothDetails(risk.getKodeRisiko(), "Dinas Pendidikan", "OPD-PENDIDIKAN");
+    }
+
+    @Test
+    void pemdaDetailsReturnHandlingNameAndMultipleCodes() {
+        RisikoPemda risk = RisikoPemda.builder().id(3L).kodeRisiko("RSK-PEM-0003").createdBy("U-ANISA").tahun(2026)
+              .perangkatYangMenangani("Dinas A, Dinas B").kodePerangkatYangMenangani("OPD-002, OPD-001").build();
+        when(pemdaRepository.findByKodeRisiko(risk.getKodeRisiko())).thenReturn(Optional.of(risk));
+
+        assertHandlingFieldsInBothDetails(risk.getKodeRisiko(), "Dinas A, Dinas B", "OPD-002, OPD-001");
+    }
+
+    @Test
+    void operasionalDetailsReturnHandlingNameAndCodes() {
+        RisikoOperasional risk = RisikoOperasional.builder().id(4L).kodeRisiko("RSK-OPR-0004").createdBy("U-ANISA")
+              .kodeOpd("OPD-001").tahun(2026).perangkatYangMenangani("Dinas Kesehatan")
+              .kodePerangkatYangMenangani("OPD-KESEHATAN").build();
+        when(operasionalRepository.findByKodeRisiko(risk.getKodeRisiko())).thenReturn(Optional.of(risk));
+
+        assertHandlingFieldsInBothDetails(risk.getKodeRisiko(), "Dinas Kesehatan", "OPD-KESEHATAN");
+    }
+
+    @Test
+    void detailsReturnHandlingKeysWhenStoredValuesAreNull() {
+        RisikoOpd risk = risk();
+        risk.setKodePerangkatYangMenangani("OPD-002, OPD-003");
+        when(opdRepository.findByKodeRisiko(risk.getKodeRisiko())).thenReturn(Optional.of(risk));
+
+        assertHandlingFieldsInBothDetails(risk.getKodeRisiko(), null, "OPD-002, OPD-003");
+
+        risk.setKodePerangkatYangMenangani(null);
+        assertHandlingFieldsInBothDetails(risk.getKodeRisiko(), null, null);
+    }
+
+    @Test
+    void detailEndpointsSerializeHandlingFields() throws Exception {
+        RisikoOpd risk = risk();
+        risk.setKodePerangkatYangMenangani("OPD-002, OPD-003");
+        String kodeRisiko = risk.getKodeRisiko();
+        VerifikasiRisiko verification = VerifikasiRisiko.builder().kodeRisiko(kodeRisiko).status("VERIFIED").build();
+        when(opdRepository.findByKodeRisiko(kodeRisiko)).thenReturn(Optional.of(risk));
+        when(verifikasiRepository.findByKodeRisiko(kodeRisiko)).thenReturn(Optional.of(verification));
+        var mvc = MockMvcBuilders.standaloneSetup(new RisikoVerifikasiController(service)).build();
+
+        for (String route : List.of("/pengajuan-risiko/{kodeRisiko}", "/verifikasi-risiko/{kodeRisiko}")) {
+            mvc.perform(get(route, kodeRisiko))
+                  .andExpect(status().isOk())
+                  .andExpect(jsonPath("$.data.risiko.perangkat_yang_menangani").hasJsonPath())
+                  .andExpect(jsonPath("$.data.risiko.perangkat_yang_menangani").value(nullValue()))
+                  .andExpect(jsonPath("$.data.risiko.kode_perangkat_yang_menangani").value("OPD-002, OPD-003"));
+        }
+    }
+
+    private void assertHandlingFieldsInBothDetails(String kodeRisiko, String nama, String kodePerangkat) {
+        VerifikasiRisiko verification = VerifikasiRisiko.builder().kodeRisiko(kodeRisiko).status("VERIFIED").build();
+        when(verifikasiRepository.findByKodeRisiko(kodeRisiko)).thenReturn(Optional.of(verification));
+
+        assertHandlingFields(service.detailPengajuan(kodeRisiko, principal("U-ANISA", "level_3")), nama, kodePerangkat);
+        assertHandlingFields(service.detailVerifikasi(kodeRisiko, principal("U-BUDI", "level_2")), nama, kodePerangkat);
+    }
+
+    private void assertHandlingFields(Map<String, Object> detail, String nama, String kodePerangkat) {
+        Map<?, ?> risk = assertInstanceOf(Map.class, detail.get("risiko"));
+        assertTrue(risk.containsKey("perangkat_yang_menangani"));
+        assertTrue(risk.containsKey("kode_perangkat_yang_menangani"));
+        assertEquals(nama, risk.get("perangkat_yang_menangani"));
+        assertEquals(kodePerangkat, risk.get("kode_perangkat_yang_menangani"));
     }
 
     private RisikoOpd risk() {

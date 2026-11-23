@@ -299,28 +299,37 @@ public class RisikoVerifikasiService {
         if (row.source() instanceof RisikoOpd risk) {
             result.put("kode_sasaran_opd", risk.getKodeSasaranOpd());
             businessFields(result, risk.getPermasalahan(), risk.getSebabPermasalahan(), risk.getPengendalianYangSudahAda(),
-                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(), risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
+                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(),
+                  risk.getPerangkatYangMenangani(), risk.getKodePerangkatYangMenangani(),
+                  risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
         } else if (row.source() instanceof RisikoPemda risk) {
             result.put("kode_sasaran_pemda", risk.getKodeSasaranPemda());
             businessFields(result, risk.getPermasalahan(), risk.getSebabPermasalahan(), risk.getPengendalianYangSudahAda(),
-                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(), risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
+                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(),
+                  risk.getPerangkatYangMenangani(), risk.getKodePerangkatYangMenangani(),
+                  risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
         } else if (row.source() instanceof RisikoOperasional risk) {
             result.put("kode_rekin", risk.getKodeRekin());
             result.put("pegawai_id", risk.getPegawaiId());
             businessFields(result, risk.getPermasalahan(), risk.getSebabPermasalahan(), risk.getPengendalianYangSudahAda(),
-                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(), risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
+                  risk.getSkalaKemungkinan(), risk.getSkalaDampak(), risk.getRencanaTindakPengendalian(),
+                  risk.getPerangkatYangMenangani(), risk.getKodePerangkatYangMenangani(),
+                  risk.getMetodePemantauan(), risk.getPenanggungjawabPemantauan());
         }
         return result;
     }
 
     private static void businessFields(Map<String, Object> result, String permasalahan, String sebab, String pengendalian,
-                                       Integer kemungkinan, Integer dampak, String rtp, String metode, String penanggungjawab) {
+                                       Integer kemungkinan, Integer dampak, String rtp, String perangkatYangMenangani,
+                                       String kodePerangkatYangMenangani, String metode, String penanggungjawab) {
         result.put("permasalahan", permasalahan);
         result.put("sebab_permasalahan", sebab);
         result.put("pengendalian_yang_sudah_ada", pengendalian);
         result.put("skala_kemungkinan", kemungkinan);
         result.put("skala_dampak", dampak);
         result.put("rencana_tindak_pengendalian", rtp);
+        result.put("perangkat_yang_menangani", perangkatYangMenangani);
+        result.put("kode_perangkat_yang_menangani", kodePerangkatYangMenangani);
         result.put("metode_pemantauan", metode);
         result.put("penanggungjawab_pemantauan", penanggungjawab);
     }
